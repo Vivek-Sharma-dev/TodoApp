@@ -9,9 +9,10 @@ import * as todoController from "../controllers/todos.controller.js";
 const todoRouter = Router();
 
 todoRouter.post(
-  "/todos",
+  "/",
   validate(createTodoSchema),
   todoController.createTodo,
 );
+todoRouter.get("/:id", todoController.getTodo);
 
 export default todoRouter;
