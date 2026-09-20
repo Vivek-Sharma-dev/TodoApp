@@ -26,3 +26,8 @@ export const updateTodoSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required",
   });
+
+
+  export const getTodoSchema = z.object({
+    id: z.string().uuid("Invalid todo ID"),
+  });

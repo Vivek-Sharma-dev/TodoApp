@@ -30,16 +30,10 @@ export const createTodo = async (req, res) => {
 
 export const getTodo = async (req, res) => {
   const todoId = req.params.id;
-  if (!todoId) {
-    return res.status(400).json({
-      success: false,
-      message: "Todo ID is required",
-    });
-  }
-
+  const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
   try {
-    const todo = await pool.query("SELECT * FROM todos WHERE id = $1", [
-      todoId,
+    const todo = await pool.query("SELECT * FROM todos WHERE id = $1 AND user_id = $2", [
+      todoId, userId
     ]);
     if (!todo.rows[0]) {
       return res.status(404).json({
@@ -68,6 +62,13 @@ export const getAllTodos = async (req, res) => {
     const todos = await pool.query("SELECT * FROM todos WHERE user_id = $1", [
       userId,
     ]);
+
+    if(!todos.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: "Todos not found",
+      });
+    }
     return res.status(200).json({
       success: true,
       data: todos.rows,
