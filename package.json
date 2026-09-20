@@ -1,0 +1,24 @@
+{
+  "name": "01_todoapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vivek-Sharma-dev/TodoApp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Vivek-Sharma-dev/TodoApp/issues"
+  },
+  "homepage": "https://github.com/Vivek-Sharma-dev/TodoApp#readme",
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
+}

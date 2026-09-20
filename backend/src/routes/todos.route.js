@@ -1,12 +1,17 @@
-import { Router } from "express"
-import pool from "../db/db.js";
-
+import { Router } from "express";
+import { validate } from "../middlewares/validate.middleware.js";
+import {
+  createTodoSchema,
+  updateTodoSchema,
+} from "../../../shared/schemas/todos.schema.js";
+import * as todoController from "../controllers/todos.controller.js";
 
 const todoRouter = Router();
 
-todoRouter.get('/test', async (req, res) => {
-    const result = await pool.query("SELECT * FROM todos; ");
-    console.log(result)
-    res.json(result.rows)
-})
+todoRouter.post(
+  "/todos",
+  validate(createTodoSchema),
+  todoController.createTodo,
+);
+
 export default todoRouter;
