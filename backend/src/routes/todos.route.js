@@ -23,4 +23,10 @@ todoRouter.patch(
   todoController.updateTodo,
 );
 
+todoRouter.delete(
+  "/:id",
+  validate(todoSchemas.getTodoSchema, "params"),
+  todoController.deleteTodo,
+);
+
 export default todoRouter;

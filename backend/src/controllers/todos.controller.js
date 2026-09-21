@@ -128,3 +128,28 @@ export const updateTodo = async (req, res) => {
     });
   }
 };
+
+export const deleteTodo = async (req, res ) => {
+    const todoId = req.params.id;
+    const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
+    try {
+        const result = await pool.query('DELETE FROM todos WHERE id = $1 AND user_id = $2 RETURNING *', [todoId, userId]);
+        if (!result.rows[0]) {
+            return res.status(404).json({
+                success: false,
+                message: "Todo not found",
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            data: result.rows[0],
+            message: "Todo deleted successfully",
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            error: "Failed to delete todo",
+        });
+    }
+}
