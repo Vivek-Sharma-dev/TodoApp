@@ -1,5 +1,4 @@
 import pool from "../db/db.js";
-import db from "../db/db.js";
 
 export const createTodo = async (req, res) => {
   const { title, description, priority, due_date } = req.body;
@@ -32,9 +31,10 @@ export const getTodo = async (req, res) => {
   const todoId = req.params.id;
   const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
   try {
-    const todo = await pool.query("SELECT * FROM todos WHERE id = $1 AND user_id = $2", [
-      todoId, userId
-    ]);
+    const todo = await pool.query(
+      "SELECT * FROM todos WHERE id = $1 AND user_id = $2",
+      [todoId, userId],
+    );
     if (!todo.rows[0]) {
       return res.status(404).json({
         success: false,
@@ -63,7 +63,7 @@ export const getAllTodos = async (req, res) => {
       userId,
     ]);
 
-    if(!todos.rows[0]) {
+    if (!todos.rows[0]) {
       return res.status(404).json({
         success: false,
         message: "Todos not found",
@@ -79,6 +79,52 @@ export const getAllTodos = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Failed to fetch todos",
+    });
+  }
+};
+
+export const updateTodo = async (req, res) => {
+  const todoId = req.params.id;
+  const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
+  let fields = [];
+  let values = [];
+  const allowedFields = [
+    "title",
+    "description",
+    "completed",
+    "due_date",
+    "priority",
+  ];
+  for (const field of allowedFields) {
+    if (Object.hasOwn(req.body, field)) {
+      fields.push(field);
+      values.push(req.body[field]);
+    }
+  }
+  fields.push("updated_at");
+  values.push(new Date());
+  const setClause = fields
+    .map((field, index) => `${field} = $${index + 1}`)
+    .join(", ");
+  const query = `UPDATE todos SET ${setClause} WHERE id = $${fields.length + 1} AND user_id = $${fields.length + 2} RETURNING *`;
+  try {
+    const result = await pool.query(query, [...values, todoId, userId]);
+    if (!result.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: "Todo not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: result.rows[0],
+      message: "Todo updated successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to update todo",
     });
   }
 };

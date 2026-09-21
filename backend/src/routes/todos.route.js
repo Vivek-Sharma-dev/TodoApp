@@ -5,8 +5,22 @@ import * as todoController from "../controllers/todos.controller.js";
 
 const todoRouter = Router();
 
-todoRouter.post("/", validate(todoSchemas.createTodoSchema, "body"), todoController.createTodo);
-todoRouter.get("/:id", validate(todoSchemas.getTodoSchema, "params"), todoController.getTodo);
+todoRouter.post(
+  "/",
+  validate(todoSchemas.createTodoSchema, "body"),
+  todoController.createTodo,
+);
 todoRouter.get("/", todoController.getAllTodos);
+todoRouter.get(
+  "/:id",
+  validate(todoSchemas.getTodoSchema, "params"),
+  todoController.getTodo,
+);
+todoRouter.patch(
+  "/:id",
+  validate(todoSchemas.updateTodoSchema, "body"),
+  validate(todoSchemas.getTodoSchema, "params"),
+  todoController.updateTodo,
+);
 
 export default todoRouter;
