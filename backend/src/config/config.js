@@ -11,6 +11,8 @@ if(!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not find")
 if(!process.env.REFRESH_TOKEN_EXPIRY) throw new Error("REFRESH_TOKEN_EXPIRY is not find")
 if(!process.env.ACCESS_TOKEN_EXPIRY) throw new Error("ACCESS_TOKEN_EXPIRY is not find")
 if(!process.env.NODE_ENV) throw new Error("NODE_ENV is not find")
+if(!process.env.REFRESH_TOKEN_LIFETIME) throw new Error("REFRESH_TOKEN_LIFETIME is not find")
+    
 
 const config = {
     SERVER_PORT: process.env.SERVER_PORT,
@@ -23,6 +25,7 @@ const config = {
     REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY,
     ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY,
     env: process.env.NODE_ENV,
+    REFRESH_TOKEN_LIFETIME: process.env.REFRESH_TOKEN_LIFETIME,
 }
 
 

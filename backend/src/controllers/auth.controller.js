@@ -44,7 +44,7 @@ export const register = async (req, res) => {
       httpOnly: true,
       secure: config.env === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: Number(config.REFRESH_TOKEN_LIFETIME),
     });
     const accessToken = generateAccessToken(user.rows[0], session.id);
 
@@ -105,7 +105,7 @@ export const login = async (req, res) => {
       httpOnly: true,
       secure: config.env === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: Number(config.REFRESH_TOKEN_LIFETIME), // 7 days
     });
 
     const accessToken = generateAccessToken(user.rows[0], session.id);
@@ -130,3 +130,5 @@ export const login = async (req, res) => {
     });
   }
 };
+
+
