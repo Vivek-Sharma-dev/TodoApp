@@ -266,3 +266,31 @@ export const logout = async (req, res) => {
   }
 };
 
+export const logoutAll = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: "Refresh token not found",
+    });
+  }
+  try {
+    const decode = verifyRefreshToken(refreshToken);
+    const userSessions = await pool.query(
+      "UPDATE sessions SET revoked = $1, revoked_at = $2 WHERE user_id = $3 AND revoked = $4",
+      [true, new Date(), decode.id, false],
+    );
+
+    res.clearCookie("refreshToken");
+    return res.status(200).json({
+      success: true,
+      message: "All sessions terminated successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to logout user",
+    });
+  }
+};
