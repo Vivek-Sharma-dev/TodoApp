@@ -11,6 +11,9 @@ import {
   generateRefreshToken,
 } from "../utils/token.util.js";
 
+
+
+
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
   try {
@@ -31,22 +34,19 @@ export const register = async (req, res) => {
     const refreshToken = generateRefreshToken(user.rows[0]);
     const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
 
-    const sessionQuery = `INSERT INTO sessions (user_id, hashed_refresh_token, refresh_token_expiry_at, ip, user_agent) VALUES ($1, $2, $3, $4, $5) RETURNING id`;
-
-    const session = await pool.query(sessionQuery, [
-      user.rows[0].id,
+    const session = await createSession(
+      user.rows[0],
       hashedRefreshToken,
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       req.ip,
       req.get("User-Agent"),
-    ]);
+    );
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: config.ENV === "production",
+      secure: config.env === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    const accessToken = generateAccessToken(user.rows[0], session.rows[0].id);
+    const accessToken = generateAccessToken(user.rows[0], session.id);
 
     return res.status(201).json({
       success: true,
@@ -78,7 +78,7 @@ export const login = async (req, res) => {
     if (!user.rows[0]) {
       return res.status(404).json({
         success: false,
-        message: "User not found",
+        message: "Invalid password or email",
       });
     }
     const isPasswordValid = await comparePassword(
@@ -88,7 +88,7 @@ export const login = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: "Invalid password",
+        message: "Invalid password or email",
       });
     }
 
@@ -103,7 +103,7 @@ export const login = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: config.ENV === "production",
+      secure: config.env === "production",
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });

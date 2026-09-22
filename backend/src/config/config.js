@@ -22,7 +22,7 @@ const config = {
     JWT_SECRET: process.env.JWT_SECRET,
     REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY,
     ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY,
-    ENV: process.env.NODE_ENV,
+    env: process.env.NODE_ENV,
 }
 
 
