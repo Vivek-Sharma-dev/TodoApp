@@ -205,3 +205,64 @@ export const refresh = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Failed to refresh token",
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: "Refresh token not found",
+    });
+  }
+
+  try {
+    const decode = verifyRefreshToken(refreshToken);
+    const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
+      decode.sessionId,
+    ]);
+    if (
+      !session.rows[0] ||
+      session.rows[0].revoked ||
+      new Date(session.rows[0].refresh_token_expiry_at) < new Date()
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    const matchRefreshToken = compareHashedRefreshTokens(
+      session.rows[0].hashed_refresh_token,
+      refreshToken,
+    );
+    if (!matchRefreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    const sessionUpdateQuery =
+      "UPDATE sessions SET revoked = $1, revoked_at = $2 WHERE id = $3";
+    await pool.query(sessionUpdateQuery, [
+      true,
+      new Date(),
+      session.rows[0].id,
+    ]);
+    res.clearCookie("refreshToken");
+    return res.status(200).json({
+      success: true,
+      message: "User logged out successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to logout user",
+    });
+  }
+};
+
