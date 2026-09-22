@@ -150,6 +150,10 @@ export const refresh = async (req, res) => {
     const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
       decode.sessionId,
     ]);
+    const user = await pool.query(
+      "SELECT email, name, id FROM users WHERE id = $1",
+      [decode.id],
+    );
     if (
       !session.rows[0] ||
       session.rows[0].revoked ||
@@ -173,7 +177,7 @@ export const refresh = async (req, res) => {
     }
 
     const refreshTokenNew = generateRefreshToken(
-      session.rows[0].user_id,
+      user.rows[0],
       session.rows[0].id,
     );
     const hashedRefreshTokenNew = generateHashedRefreshToken(refreshTokenNew);
@@ -184,10 +188,7 @@ export const refresh = async (req, res) => {
       new Date(Date.now() + Number(config.REFRESH_TOKEN_LIFETIME)),
       session.rows[0].id,
     ]);
-    const accessToken = generateAccessToken(
-      session.rows[0].user_id,
-      session.rows[0].id,
-    );
+    const accessToken = generateAccessToken(user.rows[0], session.rows[0].id);
 
     res.cookie("refreshToken", refreshTokenNew, {
       httpOnly: true,
@@ -295,7 +296,7 @@ export const logoutAll = async (req, res) => {
 
 // get user information
 export const getMe = async (req, res) => {
-  const {id: userId} = req.user;
+  const { id: userId } = req.user;
   try {
     const user = await pool.query("SELECT * FROM users WHERE id = $1", [
       userId,

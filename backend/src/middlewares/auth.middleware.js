@@ -31,6 +31,7 @@ export const authMiddleware = async (req, res, next) => {
       sessionId: decode.sessionId,
     };
     req.user = user;
+    console.log(user)
     next();
   } catch (error) {
     return res.status(401).json({

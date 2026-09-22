@@ -2,8 +2,8 @@ import pool from "../db/db.js";
 
 export const createTodo = async (req, res) => {
   const { title, description, priority, due_date } = req.body;
-  console.log(req.body);
-  const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
+  const userId = req.user.id;
+  console.log(userId)
   try {
     const insertQuery =
       "INSERT INTO todos (user_id, title, description, priority, due_date) VALUES ($1, $2, $3, $4, $5) RETURNING *";
@@ -29,7 +29,7 @@ export const createTodo = async (req, res) => {
 
 export const getTodo = async (req, res) => {
   const todoId = req.params.id;
-  const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
+  const userId = req.user.id;
   try {
     const todo = await pool.query(
       "SELECT * FROM todos WHERE id = $1 AND user_id = $2",
@@ -56,7 +56,7 @@ export const getTodo = async (req, res) => {
 };
 
 export const getAllTodos = async (req, res) => {
-  const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
+  const userId = req.user.id;
 
   try {
     const todos = await pool.query("SELECT * FROM todos WHERE user_id = $1", [
@@ -73,6 +73,7 @@ export const getAllTodos = async (req, res) => {
       success: true,
       data: todos.rows,
       message: "Todos fetched successfully",
+      totalTodos: todos.rows.length
     });
   } catch (error) {
     console.log(error);
@@ -85,7 +86,7 @@ export const getAllTodos = async (req, res) => {
 
 export const updateTodo = async (req, res) => {
   const todoId = req.params.id;
-  const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
+  const userId = req.user.id;
   let fields = [];
   let values = [];
   const allowedFields = [
@@ -129,27 +130,30 @@ export const updateTodo = async (req, res) => {
   }
 };
 
-export const deleteTodo = async (req, res ) => {
-    const todoId = req.params.id;
-    const userId = "ce4ff9af-1523-46b6-89e4-ecc45c1e1554";
-    try {
-        const result = await pool.query('DELETE FROM todos WHERE id = $1 AND user_id = $2 RETURNING *', [todoId, userId]);
-        if (!result.rows[0]) {
-            return res.status(404).json({
-                success: false,
-                message: "Todo not found",
-            });
-        }
-        return res.status(200).json({
-            success: true,
-            data: result.rows[0],
-            message: "Todo deleted successfully",
-        });
-    } catch (error) {
-        console.log(error);
-        return res.status(500).json({
-            success: false,
-            error: "Failed to delete todo",
-        });
+export const deleteTodo = async (req, res) => {
+  const todoId = req.params.id;
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(
+      "DELETE FROM todos WHERE id = $1 AND user_id = $2 RETURNING *",
+      [todoId, userId],
+    );
+    if (!result.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: "Todo not found",
+      });
     }
-}
+    return res.status(200).json({
+      success: true,
+      data: result.rows[0],
+      message: "Todo deleted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to delete todo",
+    });
+  }
+};
