@@ -11,9 +11,10 @@ import {
   generateAccessToken,
   generateHashedRefreshToken,
   generateRefreshToken,
-  verifyRefreshToken,
+  verifyToken,
 } from "../utils/token.util.js";
 
+// register a new user
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
   try {
@@ -71,6 +72,7 @@ export const register = async (req, res) => {
   }
 };
 
+// log in a user
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -134,6 +136,7 @@ export const login = async (req, res) => {
   }
 };
 
+// refresh the access token
 export const refresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
@@ -143,7 +146,7 @@ export const refresh = async (req, res) => {
     });
   }
   try {
-    const decode = verifyRefreshToken(refreshToken);
+    const decode = verifyToken(refreshToken);
     const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
       decode.sessionId,
     ]);
@@ -209,6 +212,7 @@ export const refresh = async (req, res) => {
   }
 };
 
+// log out user from current session
 export const logout = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
@@ -219,7 +223,7 @@ export const logout = async (req, res) => {
   }
 
   try {
-    const decode = verifyRefreshToken(refreshToken);
+    const decode = verifyToken(refreshToken);
     const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
       decode.sessionId,
     ]);
@@ -266,19 +270,13 @@ export const logout = async (req, res) => {
   }
 };
 
+// log out user from all sessions except current session
 export const logoutAll = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken) {
-    return res.status(401).json({
-      success: false,
-      message: "Refresh token not found",
-    });
-  }
+  const { id: userId } = req.user;
   try {
-    const decode = verifyRefreshToken(refreshToken);
-    const userSessions = await pool.query(
+    await pool.query(
       "UPDATE sessions SET revoked = $1, revoked_at = $2 WHERE user_id = $3 AND revoked = $4",
-      [true, new Date(), decode.id, false],
+      [true, new Date(), userId, false],
     );
 
     res.clearCookie("refreshToken");
@@ -291,6 +289,39 @@ export const logoutAll = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Failed to logout user",
+    });
+  }
+};
+
+// get user information
+export const getMe = async (req, res) => {
+  const {id: userId} = req.user;
+  try {
+    const user = await pool.query("SELECT * FROM users WHERE id = $1", [
+      userId,
+    ]);
+    if (!user.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          id: user.rows[0].id,
+          name: user.rows[0].name,
+          email: user.rows[0].email,
+        },
+      },
+      message: "User information fetched successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to fetch user information",
     });
   }
 };

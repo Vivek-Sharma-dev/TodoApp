@@ -40,7 +40,7 @@ export const generateHashedRefreshToken = (refreshToken) => {
 };
 
 // verify refresh token
-export const verifyRefreshToken = (refreshToken) => {
+export const verifyToken = (refreshToken) => {
   try {
     const decode = jwt.verify(refreshToken, config.JWT_SECRET);
     return decode;
