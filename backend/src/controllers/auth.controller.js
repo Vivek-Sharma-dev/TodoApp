@@ -69,3 +69,64 @@ export const register = async (req, res) => {
   }
 };
 
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+    if (!user.rows[0]) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    const isPasswordValid = await comparePassword(
+      password,
+      user.rows[0].password_hash,
+    );
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid password",
+      });
+    }
+
+    const refreshToken = generateRefreshToken(user.rows[0]);
+    const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
+    const session = await createSession(
+      user.rows[0],
+      hashedRefreshToken,
+      req.ip,
+      req.get("User-Agent"),
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: config.ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    const accessToken = generateAccessToken(user.rows[0], session.id);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          id: user.rows[0].id,
+          name: user.rows[0].name,
+          email: user.rows[0].email,
+        },
+        accessToken: accessToken,
+      },
+      message: "User logged in successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to login user",
+    });
+  }
+};
