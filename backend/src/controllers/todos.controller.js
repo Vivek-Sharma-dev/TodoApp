@@ -3,8 +3,13 @@ import pool from "../db/db.js";
 export const createTodo = async (req, res) => {
   const { title, description, priority, due_date } = req.body;
   const userId = req.user.id;
-  console.log(userId)
   try {
+    if (new Date(due_date) < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Due date cannot be in the past",
+      });
+    }
     const insertQuery =
       "INSERT INTO todos (user_id, title, description, priority, due_date) VALUES ($1, $2, $3, $4, $5) RETURNING *";
     const result = await pool.query(insertQuery, [
@@ -73,7 +78,7 @@ export const getAllTodos = async (req, res) => {
       success: true,
       data: todos.rows,
       message: "Todos fetched successfully",
-      totalTodos: todos.rows.length
+      totalTodos: todos.rows.length,
     });
   } catch (error) {
     console.log(error);
@@ -102,6 +107,14 @@ export const updateTodo = async (req, res) => {
       values.push(req.body[field]);
     }
   }
+  if (fields.due_date && new Date(fields.due_date) < new Date()) {
+    return res.status(400).json({
+      success: false,
+      message: "Due date cannot be in the past",
+    });
+  }
+  fields.push("updated_by");
+  values.push(userId);
   fields.push("updated_at");
   values.push(new Date());
   const setClause = fields
