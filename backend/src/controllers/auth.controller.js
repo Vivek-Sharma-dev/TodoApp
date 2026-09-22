@@ -1,18 +1,18 @@
 import config from "../config/config.js";
 import pool from "../db/db.js";
 import { createSession } from "../utils/createSession.util.js";
+import { v4 as uuidv4 } from "uuid";
 import {
   comparePassword,
   generateHashedPassword,
 } from "../utils/password.util.js";
 import {
+  compareHashedRefreshTokens,
   generateAccessToken,
   generateHashedRefreshToken,
   generateRefreshToken,
+  verifyRefreshToken,
 } from "../utils/token.util.js";
-
-
-
 
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
@@ -31,10 +31,12 @@ export const register = async (req, res) => {
     const insertQuery = `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email`;
     const user = await pool.query(insertQuery, [name, email, hashedPassword]);
 
-    const refreshToken = generateRefreshToken(user.rows[0]);
+    const sessionID = uuidv4();
+    const refreshToken = generateRefreshToken(user.rows[0], sessionID);
     const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
 
     const session = await createSession(
+      sessionID,
       user.rows[0],
       hashedRefreshToken,
       req.ip,
@@ -91,10 +93,11 @@ export const login = async (req, res) => {
         message: "Invalid password or email",
       });
     }
-
-    const refreshToken = generateRefreshToken(user.rows[0]);
+    const sessionID = uuidv4();
+    const refreshToken = generateRefreshToken(user.rows[0], sessionID);
     const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
     const session = await createSession(
+      sessionID,
       user.rows[0],
       hashedRefreshToken,
       req.ip,
@@ -131,4 +134,74 @@ export const login = async (req, res) => {
   }
 };
 
+export const refresh = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: "Refresh token not found",
+    });
+  }
+  try {
+    const decode = verifyRefreshToken(refreshToken);
+    const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
+      decode.sessionId,
+    ]);
+    if (
+      !session.rows[0] ||
+      session.rows[0].revoked ||
+      new Date(session.rows[0].refresh_token_expiry_at) < new Date()
+    ) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
 
+    const isRefreshTokenValid = compareHashedRefreshTokens(
+      session.rows[0].hashed_refresh_token,
+      refreshToken,
+    );
+    if (!isRefreshTokenValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    const refreshTokenNew = generateRefreshToken(
+      session.rows[0].user_id,
+      session.rows[0].id,
+    );
+    const hashedRefreshTokenNew = generateHashedRefreshToken(refreshTokenNew);
+    const updateSessionQuery =
+      "UPDATE sessions SET hashed_refresh_token = $1, refresh_token_expiry_at = $2 WHERE id = $3";
+    await pool.query(updateSessionQuery, [
+      hashedRefreshTokenNew,
+      new Date(Date.now() + Number(config.REFRESH_TOKEN_LIFETIME)),
+      session.rows[0].id,
+    ]);
+    const accessToken = generateAccessToken(
+      session.rows[0].user_id,
+      session.rows[0].id,
+    );
+
+    res.cookie("refreshToken", refreshTokenNew, {
+      httpOnly: true,
+      secure: config.env === "production",
+      sameSite: "strict",
+      maxAge: Number(config.REFRESH_TOKEN_LIFETIME),
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        accessToken: accessToken,
+      },
+      message: "Refresh token refreshed successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to refresh token",
