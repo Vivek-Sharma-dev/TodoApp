@@ -16,4 +16,4 @@ export default pool;
 
 
 //path for running migration files
-// \i 'C:/Users/vivek/OneDrive/Desktop/fullStackProjects/01_TodoApp/backend/src/db/migrations/001_create_users.sql'
+// \i 'C:/Users/vivek/OneDrive/Desktop/fullStackProjects/01_TodoApp/backend/src/db/migrations/001_create_users.sql'x`

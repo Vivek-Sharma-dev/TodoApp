@@ -3,6 +3,7 @@ import { validate } from "../middlewares/validate.middleware.js";
 import * as todoSchemas from "../../../shared/schemas/todos.schema.js";
 import * as todoController from "../controllers/todos.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 const todoRouter = Router();
 
@@ -10,28 +11,28 @@ todoRouter.post(
   "/",
   authMiddleware,
   validate(todoSchemas.createTodoSchema, "body"),
-  todoController.createTodo,
+  asyncHandler(todoController.createTodo),
 );
-todoRouter.get("/", authMiddleware, todoController.getAllTodos);
+todoRouter.get("/", authMiddleware, asyncHandler(todoController.getAllTodos));
 todoRouter.get(
   "/:id",
   authMiddleware,
   validate(todoSchemas.getTodoSchema, "params"),
-  todoController.getTodo,
+  asyncHandler(todoController.getTodo),
 );
 todoRouter.patch(
   "/:id",
   authMiddleware,
   validate(todoSchemas.updateTodoSchema, "body"),
   validate(todoSchemas.getTodoSchema, "params"),
-  todoController.updateTodo,
+  asyncHandler(todoController.updateTodo),
 );
 
 todoRouter.delete(
   "/:id",
   authMiddleware,
   validate(todoSchemas.getTodoSchema, "params"),
-  todoController.deleteTodo,
+  asyncHandler(todoController.deleteTodo),
 );
 
 export default todoRouter;

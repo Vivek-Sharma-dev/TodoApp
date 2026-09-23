@@ -13,36 +13,39 @@ import {
   generateRefreshToken,
   verifyToken,
 } from "../utils/token.util.js";
+import AppError from "../utils/AppError.js";
 
 // register a new user
 export const register = async (req, res) => {
   const { name, email, password } = req.body;
+  const client = await pool.connect();
   try {
-    const isAlreadyExists = await pool.query(
+    await client.query("BEGIN");
+    const isAlreadyExists = await client.query(
       "SELECT * FROM users WHERE email = $1",
       [email],
     );
     if (isAlreadyExists.rows[0]) {
-      return res.status(400).json({
-        success: false,
-        message: "User already exists",
-      });
+      throw new AppError("User is already exist", 409);
     }
     const hashedPassword = await generateHashedPassword(password, 12);
     const insertQuery = `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email`;
-    const user = await pool.query(insertQuery, [name, email, hashedPassword]);
+    const user = await client.query(insertQuery, [name, email, hashedPassword]);
 
     const sessionID = uuidv4();
     const refreshToken = generateRefreshToken(user.rows[0], sessionID);
     const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
 
     const session = await createSession(
+      client,
       sessionID,
       user.rows[0],
       hashedRefreshToken,
       req.ip,
       req.get("User-Agent"),
     );
+
+    await client.query("COMMIT");
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: config.env === "production",
@@ -64,265 +67,192 @@ export const register = async (req, res) => {
       message: "User registered successfully",
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to register user",
-    });
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
 };
 
 // log in a user
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  try {
-    const user = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
-    if (!user.rows[0]) {
-      return res.status(404).json({
-        success: false,
-        message: "Invalid password or email",
-      });
-    }
-    const isPasswordValid = await comparePassword(
-      password,
-      user.rows[0].password_hash,
-    );
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid password or email",
-      });
-    }
-    const sessionID = uuidv4();
-    const refreshToken = generateRefreshToken(user.rows[0], sessionID);
-    const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
-    const session = await createSession(
-      sessionID,
-      user.rows[0],
-      hashedRefreshToken,
-      req.ip,
-      req.get("User-Agent"),
-    );
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: config.env === "production",
-      sameSite: "strict",
-      maxAge: Number(config.REFRESH_TOKEN_LIFETIME), // 7 days
-    });
-
-    const accessToken = generateAccessToken(user.rows[0], session.id);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        user: {
-          id: user.rows[0].id,
-          name: user.rows[0].name,
-          email: user.rows[0].email,
-        },
-        accessToken: accessToken,
-      },
-      message: "User logged in successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to login user",
-    });
+  const user = await pool.query("SELECT * FROM users WHERE email = $1", [
+    email,
+  ]);
+  if (!user.rows[0]) {
+    throw new AppError("Invalid password or email", 404);
   }
+  const isPasswordValid = await comparePassword(
+    password,
+    user.rows[0].password_hash,
+  );
+  if (!isPasswordValid) {
+    throw new AppError("Invalid password or email", 401);
+  }
+  const sessionID = uuidv4();
+  const refreshToken = generateRefreshToken(user.rows[0], sessionID);
+  const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
+  const session = await createSession(
+    pool,
+    sessionID,
+    user.rows[0],
+    hashedRefreshToken,
+    req.ip,
+    req.get("User-Agent"),
+  );
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: config.env === "production",
+    sameSite: "strict",
+    maxAge: Number(config.REFRESH_TOKEN_LIFETIME), // 7 days
+  });
+
+  const accessToken = generateAccessToken(user.rows[0], session.id);
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: user.rows[0].id,
+        name: user.rows[0].name,
+        email: user.rows[0].email,
+      },
+      accessToken: accessToken,
+    },
+    message: "User logged in successfully",
+  });
 };
 
 // refresh the access token
 export const refresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
-    return res.status(401).json({
-      success: false,
-      message: "Refresh token not found",
-    });
+    throw new AppError("Refresh token not found", 401);
   }
-  try {
-    const decode = verifyToken(refreshToken);
-    const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
-      decode.sessionId,
-    ]);
-    const user = await pool.query(
-      "SELECT email, name, id FROM users WHERE id = $1",
-      [decode.id],
-    );
-    if (
-      !session.rows[0] ||
-      session.rows[0].revoked ||
-      new Date(session.rows[0].refresh_token_expiry_at) < new Date()
-    ) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
-
-    const isRefreshTokenValid = compareHashedRefreshTokens(
-      session.rows[0].hashed_refresh_token,
-      refreshToken,
-    );
-    if (!isRefreshTokenValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
-
-    const refreshTokenNew = generateRefreshToken(
-      user.rows[0],
-      session.rows[0].id,
-    );
-    const hashedRefreshTokenNew = generateHashedRefreshToken(refreshTokenNew);
-    const updateSessionQuery =
-      "UPDATE sessions SET hashed_refresh_token = $1, refresh_token_expiry_at = $2 WHERE id = $3";
-    await pool.query(updateSessionQuery, [
-      hashedRefreshTokenNew,
-      new Date(Date.now() + Number(config.REFRESH_TOKEN_LIFETIME)),
-      session.rows[0].id,
-    ]);
-    const accessToken = generateAccessToken(user.rows[0], session.rows[0].id);
-
-    res.cookie("refreshToken", refreshTokenNew, {
-      httpOnly: true,
-      secure: config.env === "production",
-      sameSite: "strict",
-      maxAge: Number(config.REFRESH_TOKEN_LIFETIME),
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        accessToken: accessToken,
-      },
-      message: "Refresh token refreshed successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to refresh token",
-    });
+  const decode = verifyToken(refreshToken);
+  const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
+    decode.sessionId,
+  ]);
+  const user = await pool.query(
+    "SELECT email, name, id FROM users WHERE id = $1",
+    [decode.id],
+  );
+  if (
+    !session.rows[0] ||
+    session.rows[0].revoked ||
+    new Date(session.rows[0].refresh_token_expiry_at) < new Date()
+  ) {
+    throw new AppError("Invalid token", 401);
   }
+
+  const isRefreshTokenValid = compareHashedRefreshTokens(
+    session.rows[0].hashed_refresh_token,
+    refreshToken,
+  );
+  if (!isRefreshTokenValid) {
+    throw new AppError("Invalid token", 401);
+  }
+
+  const refreshTokenNew = generateRefreshToken(
+    user.rows[0],
+    session.rows[0].id,
+  );
+  const hashedRefreshTokenNew = generateHashedRefreshToken(refreshTokenNew);
+  const updateSessionQuery =
+    "UPDATE sessions SET hashed_refresh_token = $1, refresh_token_expiry_at = $2 WHERE id = $3";
+  await pool.query(updateSessionQuery, [
+    hashedRefreshTokenNew,
+    new Date(Date.now() + Number(config.REFRESH_TOKEN_LIFETIME)),
+    session.rows[0].id,
+  ]);
+  const accessToken = generateAccessToken(user.rows[0], session.rows[0].id);
+
+  res.cookie("refreshToken", refreshTokenNew, {
+    httpOnly: true,
+    secure: config.env === "production",
+    sameSite: "strict",
+    maxAge: Number(config.REFRESH_TOKEN_LIFETIME),
+  });
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      accessToken: accessToken,
+    },
+    message: "Refresh token refreshed successfully",
+  });
 };
 
 // log out user from current session
 export const logout = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
-    return res.status(401).json({
-      success: false,
-      message: "Refresh token not found",
-    });
+    throw new AppError("Refresh token not found", 401);
   }
 
-  try {
-    const decode = verifyToken(refreshToken);
-    const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
-      decode.sessionId,
-    ]);
-    if (
-      !session.rows[0] ||
-      session.rows[0].revoked ||
-      new Date(session.rows[0].refresh_token_expiry_at) < new Date()
-    ) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
-
-    const matchRefreshToken = compareHashedRefreshTokens(
-      session.rows[0].hashed_refresh_token,
-      refreshToken,
-    );
-    if (!matchRefreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
-    }
-
-    const sessionUpdateQuery =
-      "UPDATE sessions SET revoked = $1, revoked_at = $2 WHERE id = $3";
-    await pool.query(sessionUpdateQuery, [
-      true,
-      new Date(),
-      session.rows[0].id,
-    ]);
-    res.clearCookie("refreshToken");
-    return res.status(200).json({
-      success: true,
-      message: "User logged out successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to logout user",
-    });
+  const decode = verifyToken(refreshToken);
+  const session = await pool.query("SELECT * FROM sessions WHERE id = $1", [
+    decode.sessionId,
+  ]);
+  if (
+    !session.rows[0] ||
+    session.rows[0].revoked ||
+    new Date(session.rows[0].refresh_token_expiry_at) < new Date()
+  ) {
+    throw new AppError("invalid token", 401);
   }
+
+  const matchRefreshToken = compareHashedRefreshTokens(
+    session.rows[0].hashed_refresh_token,
+    refreshToken,
+  );
+  if (!matchRefreshToken) {
+    throw new AppError("invalid token", 401);
+  }
+
+  const sessionUpdateQuery =
+    "UPDATE sessions SET revoked = $1, revoked_at = $2 WHERE id = $3";
+  await pool.query(sessionUpdateQuery, [true, new Date(), session.rows[0].id]);
+  res.clearCookie("refreshToken");
+  return res.status(200).json({
+    success: true,
+    message: "User logged out successfully",
+  });
 };
 
 // log out user from all sessions except current session
 export const logoutAll = async (req, res) => {
   const { id: userId } = req.user;
-  try {
-    await pool.query(
-      "UPDATE sessions SET revoked = $1, revoked_at = $2 WHERE user_id = $3 AND revoked = $4",
-      [true, new Date(), userId, false],
-    );
+  await pool.query(
+    "UPDATE sessions SET revoked = $1, revoked_at = $2 WHERE user_id = $3 AND revoked = $4",
+    [true, new Date(), userId, false],
+  );
 
-    res.clearCookie("refreshToken");
-    return res.status(200).json({
-      success: true,
-      message: "All sessions terminated successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to logout user",
-    });
-  }
+  res.clearCookie("refreshToken");
+  return res.status(200).json({
+    success: true,
+    message: "All sessions terminated successfully",
+  });
 };
 
 // get user information
 export const getMe = async (req, res) => {
   const { id: userId } = req.user;
-  try {
-    const user = await pool.query("SELECT * FROM users WHERE id = $1", [
-      userId,
-    ]);
-    if (!user.rows[0]) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-    return res.status(200).json({
-      success: true,
-      data: {
-        user: {
-          id: user.rows[0].id,
-          name: user.rows[0].name,
-          email: user.rows[0].email,
-        },
-      },
-      message: "User information fetched successfully",
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      success: false,
-      error: "Failed to fetch user information",
-    });
+  const user = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
+  if (!user.rows[0]) {
+    throw new AppError("User not found", 404);
   }
+  return res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: user.rows[0].id,
+        name: user.rows[0].name,
+        email: user.rows[0].email,
+      },
+    },
+    message: "User information fetched successfully",
+  });
 };
