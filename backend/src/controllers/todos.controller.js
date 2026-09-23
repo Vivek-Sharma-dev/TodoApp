@@ -50,8 +50,10 @@ export const getAllTodos = async (req, res) => {
   return res.status(200).json({
     success: true,
     data: todos.rows,
+    meta: {
+      totalTodos: todos.rows.length,
+    },
     message: "Todos fetched successfully",
-    totalTodos: todos.rows.length,
   });
 };
 
@@ -61,7 +63,7 @@ export const updateTodo = async (req, res) => {
   if (req.body.due_date && new Date(req.body.due_date) < new Date()) {
     throw new AppError("Due date cannot be in the past", 400);
   }
-  let fields = [];  
+  let fields = [];
   let values = [];
   const allowedFields = [
     "title",
@@ -85,7 +87,7 @@ export const updateTodo = async (req, res) => {
   const query = `UPDATE todos SET ${setClause} WHERE id = $${fields.length + 1} AND user_id = $${fields.length + 2} RETURNING *`;
   const result = await pool.query(query, [...values, todoId, userId]);
   if (!result.rows[0]) {
-    throw new AppError("todo not found", 404);
+    throw new AppError("Todo not found", 404);
   }
   return res.status(200).json({
     success: true,
@@ -102,7 +104,7 @@ export const deleteTodo = async (req, res) => {
     [todoId, userId],
   );
   if (!result.rows[0]) {
-    throw new AppError("todo not found", 404);
+    throw new AppError("Todo not found", 404);
   }
   return res.status(200).json({
     success: true,
