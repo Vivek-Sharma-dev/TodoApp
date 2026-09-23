@@ -113,8 +113,6 @@ export const updateTodo = async (req, res) => {
       message: "Due date cannot be in the past",
     });
   }
-  fields.push("updated_by");
-  values.push(userId);
   fields.push("updated_at");
   values.push(new Date());
   const setClause = fields
@@ -123,6 +121,7 @@ export const updateTodo = async (req, res) => {
   const query = `UPDATE todos SET ${setClause} WHERE id = $${fields.length + 1} AND user_id = $${fields.length + 2} RETURNING *`;
   try {
     const result = await pool.query(query, [...values, todoId, userId]);
+    console.log('result is: ', result.rows[0]);
     if (!result.rows[0]) {
       return res.status(404).json({
         success: false,
