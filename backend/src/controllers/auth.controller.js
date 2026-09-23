@@ -128,6 +128,7 @@ export const login = async (req, res) => {
 // refresh the access token
 export const refresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
+  console.log("refresh token is: ", refreshToken);
   if (!refreshToken) {
     throw new AppError("Refresh token not found", 401);
   }
