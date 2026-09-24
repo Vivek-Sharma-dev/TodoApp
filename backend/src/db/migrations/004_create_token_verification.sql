@@ -1,0 +1,14 @@
+
+
+
+CREATE TABLE verification_tokens(
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    token_type VARCHAR(50) CHECK(token_type IN ('EMAIL_VERIFICATION','PASSWORD_RESET')) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    attempt_count INT NOT NULL DEFAULT 0,
+    max_attempts INT NOT NULL DEFAULT 3
+);
