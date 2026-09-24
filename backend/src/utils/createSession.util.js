@@ -13,7 +13,7 @@ export const createSession = async (
     sessionID,
     user.id,
     hashedRefreshToken,
-    new Date(Date.now() + Number(config.REFRESH_TOKEN_LIFETIME)),
+    new Date(Date.now() + config.REFRESH_TOKEN_LIFETIME),
     ip,
     userAgent,
   ]);

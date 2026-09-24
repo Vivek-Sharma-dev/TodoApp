@@ -106,7 +106,7 @@ export const login = async (req, res) => {
     httpOnly: true,
     secure: config.env === "production",
     sameSite: "strict",
-    maxAge: Number(config.REFRESH_TOKEN_LIFETIME), // 7 days
+    maxAge: config.REFRESH_TOKEN_LIFETIME, // 7 days
   });
 
   const accessToken = generateAccessToken(user.rows[0], session.id);
@@ -165,7 +165,7 @@ export const refresh = async (req, res) => {
     "UPDATE sessions SET hashed_refresh_token = $1, refresh_token_expiry_at = $2 WHERE id = $3";
   await pool.query(updateSessionQuery, [
     hashedRefreshTokenNew,
-    new Date(Date.now() + Number(config.REFRESH_TOKEN_LIFETIME)),
+    new Date(Date.now() + config.REFRESH_TOKEN_LIFETIME),
     session.rows[0].id,
   ]);
   const accessToken = generateAccessToken(user.rows[0], session.rows[0].id);
@@ -174,7 +174,7 @@ export const refresh = async (req, res) => {
     httpOnly: true,
     secure: config.env === "production",
     sameSite: "strict",
-    maxAge: Number(config.REFRESH_TOKEN_LIFETIME),
+    maxAge: config.REFRESH_TOKEN_LIFETIME,
   });
 
   return res.status(200).json({
