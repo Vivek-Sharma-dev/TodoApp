@@ -14,11 +14,14 @@ const requiredEnv = [
   "NODE_ENV",
   "REFRESH_TOKEN_LIFETIME",
   "FRONTEND_URL",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASSWORD",
 ];
 
-for( const key of requiredEnv) {
-    if(!process.env[key])
-        throw new Error(`${key} is not defined!`);
+for (const key of requiredEnv) {
+  if (!process.env[key]) throw new Error(`${key} is not defined!`);
 }
 const config = {
   SERVER_PORT: Number(process.env.SERVER_PORT),
@@ -33,6 +36,10 @@ const config = {
   env: process.env.NODE_ENV,
   REFRESH_TOKEN_LIFETIME: Number(process.env.REFRESH_TOKEN_LIFETIME),
   FRONTEND_URL: process.env.FRONTEND_URL,
+  SMTP_HOST: process.env.SMTP_HOST,
+  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_USER: process.env.SMTP_USER,
+  SMTP_PASSWORD: process.env.SMTP_PASSWORD,
 };
 
 export default config;
