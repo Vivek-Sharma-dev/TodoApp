@@ -1,4 +1,6 @@
+import config from "../config/config.js";
 import pool from "../db/db.js";
+import { transporter } from "../services/email.service.js";
 import AppError from "../utils/AppError.js";
 
 export const createTodo = async (req, res) => {
@@ -22,6 +24,8 @@ export const createTodo = async (req, res) => {
     message: "Todo created successfully",
   });
 };
+
+
 
 export const getTodo = async (req, res) => {
   const todoId = req.params.id;
