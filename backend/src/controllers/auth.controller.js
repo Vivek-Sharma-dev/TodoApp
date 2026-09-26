@@ -188,6 +188,20 @@ export const login = async (req, res) => {
     maxAge: config.REFRESH_TOKEN_LIFETIME, // 7 days
   });
 
+  if (user.rows[0].email_verified === false) {
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          id: user.rows[0].id,
+          name: user.rows[0].name,
+          email: user.rows[0].email,
+        },
+      },
+      message: "User logged in successfully",
+      note: "Your email is still not verified please verified it for get access of our app"
+    });
+  }
   const accessToken = generateAccessToken(user.rows[0], session.id);
 
   return res.status(200).json({
