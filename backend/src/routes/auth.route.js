@@ -16,6 +16,11 @@ authRouter.post(
 );
 
 authRouter.post(
+  "/email-verification",
+  asyncHandler(authController.emailVerification),
+);
+
+authRouter.post(
   "/login",
   authRateLimiter,
   validate(authSchema.loginSchema, "body"),

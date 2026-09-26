@@ -14,6 +14,8 @@ import {
   verifyToken,
 } from "../utils/token.util.js";
 import AppError from "../utils/AppError.js";
+import { sendVerificationOtp } from "../services/email.service.js";
+import { generateOtp, hashOtp } from "../utils/otp.utils.js";
 
 // register a new user
 export const register = async (req, res) => {
@@ -45,14 +47,27 @@ export const register = async (req, res) => {
       req.get("User-Agent"),
     );
 
-    await client.query("COMMIT");
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: config.env === "production",
       sameSite: "strict",
       maxAge: Number(config.REFRESH_TOKEN_LIFETIME),
     });
-    const accessToken = generateAccessToken(user.rows[0], session.id);
+    
+    const otp = generateOtp();
+    const hashedOtp = hashOtp(otp);
+    const storeOtpQuery = `INSERT INTO verification_tokens (token_hash, token_type, user_id, expires_at, attempt_count) VALUES ($1, $2, $3, $4, $5)`;
+    await client.query(storeOtpQuery, [
+      hashedOtp,
+      "EMAIL_VERIFICATION",
+      user.rows[0].id,
+      new Date(Date.now() + config.OTP_LIFETIME),
+      0,
+    ]);
+    await client.query("COMMIT");
+
+    // send otp email after commit to prevent race condition
+    sendVerificationOtp(email, otp);
 
     return res.status(201).json({
       success: true,
@@ -62,7 +77,6 @@ export const register = async (req, res) => {
           name: user.rows[0].name,
           email: user.rows[0].email,
         },
-        accessToken: accessToken,
       },
       message: "User registered successfully",
     });
@@ -72,6 +86,11 @@ export const register = async (req, res) => {
   } finally {
     client.release();
   }
+};
+
+export const emailVerification = async (req, res) => {
+  const otp = generateOtp();
+  sendVerificationOtp("viveksharmaa252@gmail.com", otp);
 };
 
 // log in a user

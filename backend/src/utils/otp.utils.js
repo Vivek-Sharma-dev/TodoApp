@@ -5,6 +5,6 @@ export const generateOtp = () => {
   return String(crypto.randomInt(10 ** (OTP_LENGTH - 1), 10 ** OTP_LENGTH));
 };
 
-export const hashOtp = (otp) => {
+export const hashOtpFn = (otp) => {
   return crypto.createHash("sha256").update(otp).digest("hex");
 };

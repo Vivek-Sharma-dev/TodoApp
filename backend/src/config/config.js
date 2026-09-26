@@ -18,6 +18,7 @@ const requiredEnv = [
   "SMTP_PORT",
   "SMTP_USER",
   "SMTP_PASSWORD",
+  "OTP_LIFETIME",
 ];
 
 for (const key of requiredEnv) {
@@ -40,6 +41,7 @@ const config = {
   SMTP_PORT: process.env.SMTP_PORT,
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASSWORD: process.env.SMTP_PASSWORD,
+  OTP_LIFETIME: Number(process.env.OTP_LIFETIME)
 };
 
 export default config;
