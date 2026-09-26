@@ -11,5 +11,6 @@ CREATE TABLE sessions (
     user_agent TEXT NOT NULL,
     revoked BOOLEAN NOT NULL DEFAULT FALSE,
     revoked_at TIMESTAMPTZ,
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE
     CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
