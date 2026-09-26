@@ -15,7 +15,11 @@ import {
 } from "../utils/token.util.js";
 import AppError from "../utils/AppError.js";
 import { sendVerificationOtp } from "../services/email.service.js";
-import { generateOtp, hashOtp } from "../utils/otp.utils.js";
+import { generateOtp, hashOtpFn } from "../utils/otp.utils.js";
+import {
+  createVerificationToken,
+  verifyOtp,
+} from "../services/verification.service.js";
 
 // register a new user
 export const register = async (req, res) => {
@@ -38,7 +42,7 @@ export const register = async (req, res) => {
     const refreshToken = generateRefreshToken(user.rows[0], sessionID);
     const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
 
-    const session = await createSession(
+    await createSession(
       client,
       sessionID,
       user.rows[0],
@@ -51,23 +55,17 @@ export const register = async (req, res) => {
       httpOnly: true,
       secure: config.env === "production",
       sameSite: "strict",
-      maxAge: Number(config.REFRESH_TOKEN_LIFETIME),
+      maxAge: config.REFRESH_TOKEN_LIFETIME,
     });
-    
-    const otp = generateOtp();
-    const hashedOtp = hashOtp(otp);
-    const storeOtpQuery = `INSERT INTO verification_tokens (token_hash, token_type, user_id, expires_at, attempt_count) VALUES ($1, $2, $3, $4, $5)`;
-    await client.query(storeOtpQuery, [
-      hashedOtp,
-      "EMAIL_VERIFICATION",
-      user.rows[0].id,
-      new Date(Date.now() + config.OTP_LIFETIME),
-      0,
-    ]);
-    await client.query("COMMIT");
 
     // send otp email after commit to prevent race condition
-    sendVerificationOtp(email, otp);
+    const otp = await createVerificationToken(
+      client,
+      user.rows[0].id,
+      "EMAIL_VERIFICATION",
+    );
+    await client.query("COMMIT");
+    await sendVerificationOtp(email, otp);
 
     return res.status(201).json({
       success: true,
@@ -89,8 +87,70 @@ export const register = async (req, res) => {
 };
 
 export const emailVerification = async (req, res) => {
-  const otp = generateOtp();
-  sendVerificationOtp("viveksharmaa252@gmail.com", otp);
+  const { otp } = req.body;
+  const refreshToken = req.cookies.refreshToken;
+  console.log(config.REFRESH_TOKEN_LIFETIME);
+  if (!refreshToken) {
+    throw new AppError("Refresh token not found", 401);
+  }
+  const client = await pool.connect();
+  try {
+    const decode = verifyToken(refreshToken);
+    await client.query("BEGIN");
+
+    const isOtpVerified = await verifyOtp(
+      client,
+      decode.id,
+      otp,
+      "EMAIL_VERIFICATION",
+    );
+    if (!isOtpVerified) {
+      throw new AppError("OTP is not valid", 401);
+    }
+    const user = await client.query(
+      "UPDATE users SET email_verified = $1 WHERE id = $2 RETURNING *",
+      [true, decode.id],
+    );
+    const refreshTokenNew = generateRefreshToken(
+      user.rows[0],
+      decode.sessionId,
+    );
+    const hashedRefreshTokenNew = generateHashedRefreshToken(refreshTokenNew);
+    const sessionUpdateQuery =
+      "UPDATE sessions SET hashed_refresh_token = $1, refresh_token_expiry_at = $2, updated_at = $3 WHERE id = $4 AND user_id = $5 AND revoked = $6 RETURNING *";
+    const updatedSession = await client.query(sessionUpdateQuery, [
+      hashedRefreshTokenNew,
+      new Date(Date.now() + config.REFRESH_TOKEN_LIFETIME),
+      new Date(),
+      decode.sessionId,
+      decode.id,
+      false,
+    ]);
+    if (!updatedSession.rows[0]) {
+      throw new AppError("Failed to update session", 400);
+    }
+    await client.query("COMMIT");
+    res.cookie("refreshToken", refreshTokenNew, {
+      httpOnly: true,
+      secure: config.env === "production",
+      sameSite: "strict",
+      maxAge: new Date(Date.now() + config.REFRESH_TOKEN_LIFETIME),
+    });
+    const accessToken = generateAccessToken(user.rows[0], decode.sessionId);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        accessToken,
+      },
+      message: "User verification is successful",
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw new Error(error);
+  } finally {
+    client.release();
+  }
 };
 
 // log in a user

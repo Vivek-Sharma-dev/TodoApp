@@ -14,9 +14,8 @@ authRouter.post(
   validate(authSchema.registerSchema, "body"),
   asyncHandler(authController.register),
 );
-
 authRouter.post(
-  "/email-verification",
+  "/verify-email",
   asyncHandler(authController.emailVerification),
 );
 

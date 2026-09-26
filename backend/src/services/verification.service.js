@@ -2,7 +2,7 @@ import { generateOtp, hashOtpFn } from "../utils/otp.utils.js";
 import config from "../config/config.js";
 import AppError from "../utils/AppError.js";
 
-export const createVerificationToken = async (db, user, token_type) => {
+export const createVerificationToken = async (db, user_id, token_type) => {
   const otp = generateOtp();
   const hashedOtp = hashOtpFn(otp);
 
@@ -11,7 +11,7 @@ export const createVerificationToken = async (db, user, token_type) => {
     "INSERT INTO verification_tokens (user_id, token_hash, token_type, expires_at) VALUES ($1, $2, $3, $4);";
 
   await db.query(insertOtpQuery, [
-    user.user_id,
+    user_id,
     hashedOtp,
     token_type,
     new Date(Date.now() + config.OTP_LIFETIME),
@@ -27,7 +27,7 @@ export const verifyOtp = async (db, userId, submittedOtp, token_type) => {
   );
 
   if (activeVerifiication.rowCount <= 0) {
-    throw new AppError("Verification token not found", 401);
+    throw new AppError("Verification token not found", 401);    
   }
 
   const otpRow = activeVerifiication.rows[0];
