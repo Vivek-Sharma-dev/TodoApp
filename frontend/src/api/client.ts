@@ -1,7 +1,8 @@
 import axios from "axios";
+import config from "../config/config";
 
 const client = axios.create({
-    baseURL: "http://localhost:4000/api",
+    baseURL: config.serverUrl,
     withCredentials: true
 });
 

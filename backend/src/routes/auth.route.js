@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as authController from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
-import * as authSchema from "../../../shared/schemas/auth.schema.js";
+import * as authSchema from "../../../shared/schemas/auth.schema.ts";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import authRateLimiter from "../middlewares/rateLimit.middleware.js";

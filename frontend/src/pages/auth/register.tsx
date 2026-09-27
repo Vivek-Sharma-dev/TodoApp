@@ -3,6 +3,7 @@ import {
   registerSchema,
   type RegisterInput,
 } from "../../../../shared/schemas/auth.schema.ts";
+import { useRegister } from "../../hooks/auth/useRegister.tsx";
 
 const Register = () => {
   const [formData, setFormData] = useState<RegisterInput>({
@@ -12,8 +13,8 @@ const Register = () => {
     confirmPassword: "",
   });
 
-  console.log(formData);
-  
+  const { data, error, isPending, mutate } = useRegister();
+
   const [errors, setErrors] = useState<
     Partial<Record<keyof RegisterInput, string>>
   >({});
@@ -32,17 +33,17 @@ const Register = () => {
 
     const result = registerSchema.safeParse(formData);
     console.log(result);
-    if(!result.success) {
-        const fieldError: Partial<Record<keyof RegisterInput, string>> = {};
-        result.error.issues.forEach((issue) => {
-            fieldError[issue.path[0] as keyof RegisterInput] = issue.message;
-        });
-        setErrors(fieldError);
-        return;
+    if (!result.success) {
+      const fieldError: Partial<Record<keyof RegisterInput, string>> = {};
+      result.error.issues.forEach((issue) => {
+        fieldError[issue.path[0] as keyof RegisterInput] = issue.message;
+      });
+      setErrors(fieldError);
+      return;
     }
 
     setErrors({});
-    console.log("Form submitted successfully:", result.data);
+    mutate(result.data);
   };
   return (
     <>
