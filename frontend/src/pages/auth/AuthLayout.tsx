@@ -67,7 +67,7 @@ const AuthLayout = () => {
         </section>
 
         {/* Right side */}
-        <section className="flex w-full items-center justify-center px-5 py-10 sm:px-8 lg:w-[520px] lg:px-10 xl:w-[580px]">
+        <section className="flex w-full items-center justify-center px-5 py-10 sm:px-8 lg:w-130 lg:px-10 xl:w-145">
           <div className="w-full max-w-md rounded-card border border-border bg-surface/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
             <Outlet />
           </div>
