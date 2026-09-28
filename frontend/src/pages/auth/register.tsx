@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
-import '../../styles/component.style.css';
+import "../../styles/component.style.css";
 
 import {
   registerSchema,
@@ -9,26 +8,23 @@ import {
 } from "../../../../shared/schemas/auth.schema.ts";
 
 import { useRegister } from "../../hooks/auth/useRegister.tsx";
+import PasswordInput from "../../components/common/inputs/PasswordInput.tsx";
 
 const Register = () => {
+  // states 
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState<RegisterInput>({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const { error, isPending, mutate } = useRegister();
-
   const [errors, setErrors] = useState<
     Partial<Record<keyof RegisterInput, string>>
   >({});
 
+  // on change event which handles every input 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -38,6 +34,7 @@ const Register = () => {
     }));
   };
 
+  // form handling
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -148,96 +145,27 @@ const Register = () => {
         </div>
 
         {/* Password */}
-        <div>
-          <label
-            htmlFor="password"
-            className="mb-2 block text-sm font-medium text-text-primary"
-          >
-            Password
-          </label>
 
-          <div className="relative">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
-              value={formData.password}
-              onChange={handleChange}
-              autoComplete="new-password"
-              className={`w-full rounded-input border bg-background px-4 py-3 pr-11 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:ring-2 ${
-                errors.password
-                  ? "border-error/60 focus:border-error focus:ring-error/10"
-                  : "border-border focus:border-brand focus:ring-brand/10"
-              }`}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition hover:text-text-primary"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-
-          {errors.password && (
-            <p className="mt-2 text-xs text-error">{errors.password}</p>
-          )}
-        </div>
+        <PasswordInput
+          name="password"
+          placeholder="Enter your password"
+          value={formData.password}
+          handleChange={handleChange}
+          title="Password"
+          error={errors.password || ""}
+          autoComplete="new-password"
+        />
 
         {/* Confirm Password */}
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="mb-2 block text-sm font-medium text-text-primary"
-          >
-            Confirm Password
-          </label>
-
-          <div className="relative">
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              autoComplete="new-password"
-              className={`w-full rounded-input border bg-background px-4 py-3 pr-11 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:ring-2 ${
-                errors.confirmPassword
-                  ? "border-error/60 focus:border-error focus:ring-error/10"
-                  : "border-border focus:border-brand focus:ring-brand/10"
-              }`}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted transition hover:text-text-primary"
-              aria-label={
-                showConfirmPassword
-                  ? "Hide confirm password"
-                  : "Show confirm password"
-              }
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-
-          {errors.confirmPassword && (
-            <p className="mt-2 text-xs text-error">{errors.confirmPassword}</p>
-          )}
-        </div>
+        <PasswordInput
+          name="confirmPassword"
+          placeholder="Confirm your password"
+          value={formData.confirmPassword}
+          handleChange={handleChange}
+          title="Confirm Password"
+          error={errors.password || ""}
+          autoComplete="new-password"
+        />
 
         {/* Submit */}
         <button

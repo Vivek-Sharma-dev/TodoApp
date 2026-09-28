@@ -13,17 +13,17 @@ import {
 import { useLogin } from "../../hooks/auth/useLogin";
 
 const Login = () => {
+  // states
   const [data, setData] = useState<LoginInput>({
     email: "",
     password: "",
   });
-
   const [error, setError] = useState<
     Partial<Record<keyof LoginInput, string>>
   >({});
-
   const navigate = useNavigate();
 
+  // API call
   const { error: loginError, isPending, mutate } = useLogin();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,11 +35,12 @@ const Login = () => {
     }));
   };
 
+
+  // form handling
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const result = loginSchema.safeParse(data);
-
     if (!result.success) {
       result.error.issues.forEach((issue) => {
         setError((prevError) => ({
@@ -47,12 +48,11 @@ const Login = () => {
           [issue.path[0] as keyof LoginInput]: issue.message,
         }));
       });
-
       return;
     }
-
     setError({});
 
+    // call api
     mutate(result.data, {
       onSuccess: () => {
         navigate("/desktop", { replace: true });

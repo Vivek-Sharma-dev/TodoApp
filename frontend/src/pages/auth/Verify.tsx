@@ -7,13 +7,15 @@ import OtpInput from "../../components/common/inputs/OtpInput.tsx";
 import { useVerify } from "../../hooks/auth/useVerify.tsx";
 
 const Verify = () => {
+  // states
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState("");
-
   const navigate = useNavigate();
 
+  // api call hook
   const { error, isPending, mutate } = useVerify();
 
+  // form handling
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 

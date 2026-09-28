@@ -1,20 +1,19 @@
 import React, { useRef } from "react";
 
+// otp input props
 type OtpInputProps = {
   value: string;
   onChange: (otp: string) => void;
   error?: string;
 };
-
 const OtpInput = ({ value, onChange, error }: OtpInputProps) => {
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]); // Ref to store input elements
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number,
   ) => {
     const inputValue = e.target.value;
-    console.log(inputValue);
 
     // Allow only numbers
     if (!/^\d*$/.test(inputValue)) {

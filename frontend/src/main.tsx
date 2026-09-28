@@ -5,9 +5,9 @@ import App from "./App.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Login from "./pages/auth/Login.tsx";
 import Register from "./pages/auth/Register.tsx";
-import Desktop from "./pages/auth/Desktop.tsx";
+import Desktop from "./pages/Desktop.tsx";
 import AuthLayout from "./pages/auth/AuthLayout.tsx";
-import Home from "./pages/auth/Home.tsx";
+import Home from "./pages/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Verify from "./pages/auth/Verify.tsx";
 

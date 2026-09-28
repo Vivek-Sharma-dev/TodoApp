@@ -7,9 +7,9 @@ import type { AxiosError } from "axios";
 
 export const useLogin = () => {
   return useMutation<
-    ServerLoginResponseType,
-    AxiosError<ServerErrorType>,
-    LoginInput
+    ServerLoginResponseType,  // response type
+    AxiosError<ServerErrorType>,    // error type
+    LoginInput    // input type
   >({
     mutationFn: async (data: LoginInput) => {
       const response = await login(data);
