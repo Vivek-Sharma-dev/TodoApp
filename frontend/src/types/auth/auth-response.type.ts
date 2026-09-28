@@ -16,3 +16,16 @@ export type ServerVerifyResponseType = {
     };
     message: string;
 };
+
+export type ServerLoginResponseType = {
+    success: boolean;
+    data: {
+        user?: {
+            id: string;
+            name: string;
+            email: string;
+        };
+        accessToken?: string
+    };
+    message: string;
+};

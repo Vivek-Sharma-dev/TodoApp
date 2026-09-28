@@ -8,9 +8,10 @@ interface PasswordInputProps {
     name: string
     title: string;
     placeholder: string
+    autoComplete?: string
 }
 
-const PasswordInput = ({handleChange, value, error, name, title, placeholder}: PasswordInputProps) => {
+const PasswordInput = ({handleChange, value, error, name, title, placeholder, autoComplete}: PasswordInputProps) => {
     const [showPassword, setShowPassword] = useState(false);
   return (
     <>
@@ -26,11 +27,11 @@ const PasswordInput = ({handleChange, value, error, name, title, placeholder}: P
           <input
             id={name}
             name={name}
-            type={showPassword ? "text" : "value"}
+            type={showPassword ? "text" : "password"}
             placeholder={placeholder}
             value={value}
             onChange={handleChange}
-            autoComplete="new-value"
+            autoComplete={autoComplete}
             className={`w-full rounded-input border bg-background px-4 py-3 pr-11 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:ring-2 ${
               error
                 ? "border-error/60 focus:border-error focus:ring-error/10"
