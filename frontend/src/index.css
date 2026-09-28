@@ -20,7 +20,7 @@
   --color-text-muted: #71717a;
 
   /* Brand */
-  --color-brand: #22d3ee;
+  --color-brand: #a855f7;
   --color-brand-hover: #06b6d4;
   --color-brand-soft: #164e63;
 
@@ -84,4 +84,18 @@
     background-color: var(--color-brand);
     color: var(--color-background);
   }
+}
+
+
+
+
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-background) inset;
+  box-shadow: 0 0 0 1000px var(--color-background) inset;
+  transition: background-color 9999s ease-in-out 0s;
 }

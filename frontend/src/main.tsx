@@ -9,6 +9,7 @@ import Desktop from "./pages/auth/Desktop.tsx";
 import AuthLayout from "./pages/auth/AuthLayout.tsx";
 import Home from "./pages/auth/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Verify from "./pages/auth/Verify.tsx";
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
           {
             path: "login",
             Component: Login,
+          },
+          {
+            path: "verify",
+            Component: Verify,
           },
           {
             path: "desktop",
