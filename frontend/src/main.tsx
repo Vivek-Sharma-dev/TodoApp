@@ -34,11 +34,11 @@ const router = createBrowserRouter([
             path: "verify",
             Component: Verify,
           },
-          {
-            path: "desktop",
-            Component: Desktop,
-          },
         ],
+      },
+      {
+        path: "desktop",
+        Component: Desktop,
       },
     ],
   },
