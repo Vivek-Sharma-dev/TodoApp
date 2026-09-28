@@ -1,6 +1,56 @@
-import { Outlet } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
+import { Check, KeyRound, LogIn, UserPlus } from "lucide-react";
+
+const authContent = {
+  "/auth/register": {
+    icon: UserPlus,
+    title: "Create your account.",
+    highlight: "Start getting organized.",
+    description:
+      "Create your account and take control of your tasks, priorities, and daily goals.",
+    features: [
+      "Manage your daily tasks",
+      "Set priorities and due dates",
+      "Stay focused and productive",
+    ],
+  },
+
+  "/auth/verify": {
+    icon: KeyRound,
+    title: "Secure your account.",
+    highlight: "One step away.",
+    description:
+      "Verify your email address to keep your account secure and get started with TodoApp.",
+    features: [
+      "Secure email verification",
+      "Protect your account",
+      "Get started with TodoApp",
+    ],
+  },
+
+  "/auth/login": {
+    icon: LogIn,
+    title: "Welcome back.",
+    highlight: "Let's get things done.",
+    description:
+      "Sign in to continue managing your tasks and keep your day organized.",
+    features: [
+      "Access your tasks anywhere",
+      "Track your priorities",
+      "Stay productive every day",
+    ],
+  },
+};
 
 const AuthLayout = () => {
+  const location = useLocation();
+
+  const content =
+    authContent[location.pathname as keyof typeof authContent] ??
+    authContent["/auth/login"];
+
+  const Icon = content.icon;
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
       {/* Background image */}
@@ -25,8 +75,9 @@ const AuthLayout = () => {
         {/* Left side */}
         <section className="hidden flex-1 flex-col justify-center px-12 lg:flex xl:px-20">
           <div className="max-w-xl">
+            {/* Brand */}
             <div className="mb-8 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-button bg-brand text-background font-bold">
+              <div className="flex h-10 w-10 items-center justify-center rounded-button bg-brand font-bold text-background">
                 T
               </div>
 
@@ -35,26 +86,28 @@ const AuthLayout = () => {
               </span>
             </div>
 
-            <h1 className="text-5xl font-bold leading-tight tracking-tight text-text-primary xl:text-6xl">
-              Organize your work.
+            {/* Page icon */}
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-brand/10 text-brand">
+              <Icon className="h-6 w-6" /> 
+            </div>
+
+            {/* Hero */}
+            <h1 className="text-5xl font-bold leading-tight tracking-tight text-text-primary ">
+              {content.title}
               <br />
-              <span className="text-brand">Own your time.</span>
+              <span className="text-brand">{content.highlight}</span>
             </h1>
 
             <p className="mt-6 max-w-lg text-lg leading-8 text-text-secondary">
-              A simple and powerful way to manage your tasks, stay focused,
-              and keep track of what actually matters.
+              {content.description}
             </p>
 
+            {/* Features */}
             <div className="mt-10 space-y-5">
-              {[
-                "Manage your daily tasks",
-                "Set priorities and due dates",
-                "Stay focused and productive",
-              ].map((feature) => (
+              {content.features.map((feature) => (
                 <div key={feature} className="flex items-center gap-3">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand/10 text-brand">
-                    ✓
+                    <Check className="h-3.5 w-3.5" />
                   </div>
 
                   <span className="text-sm text-text-secondary">
