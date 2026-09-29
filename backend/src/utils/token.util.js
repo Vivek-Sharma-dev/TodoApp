@@ -1,14 +1,16 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
+import AppError from "./AppError.js";
 
 // Generates a JWT refresh token for a user with a specific session ID.
-export const generateRefreshToken = (user, sessionId) => {
+export const generateRefreshToken = (user, sessionId, type) => {
   return jwt.sign(
     {
       id: user.id,
       email: user.email,
-      sessionId: sessionId
+      sessionId: sessionId,
+      type: type,
     },
     config.JWT_SECRET,
     {
@@ -19,12 +21,13 @@ export const generateRefreshToken = (user, sessionId) => {
 
 
 // generate a jwt access token for a user with a specific session ID.
-export const generateAccessToken = (user, sessionId) => {
+export const generateAccessToken = (user, sessionId, type) => {
   return jwt.sign(
     {
       id: user.id,
       sessionId: sessionId,
       email: user.email,
+      type: type,
     },
     config.JWT_SECRET,
     {
@@ -45,8 +48,7 @@ export const verifyToken = (token) => {
     const decode = jwt.verify(token, config.JWT_SECRET);
     return decode;
   } catch (error) {
-    console.log("Error in verifying refresh token: ", error);
-    return error;
+    throw new AppError(error.message, 401);
   }
 };
 

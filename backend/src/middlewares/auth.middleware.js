@@ -2,7 +2,7 @@ import { verifyToken } from "../utils/token.util.js";
 import pool from "../db/db.js";
 
 export const authMiddleware = async (req, res, next) => {
-  console.log("auth middleware")
+  console.log("auth middleware");
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({
@@ -20,11 +20,22 @@ export const authMiddleware = async (req, res, next) => {
     if (
       !session.rows[0] ||
       session.rows[0].revoked ||
-      new Date(session.rows[0].refresh_token_expiry_at) < new Date()
+      new Date(session.rows[0].refresh_token_expiry_at) < new Date() || 
+      decode.type !== "access"
     ) {
       return res.status(401).json({
         success: false,
         message: "Invalid token",
+      });
+    }
+    const userData = await pool.query("SELECT * FROM users WHERE id = $1", [
+      decode.id,
+    ]);
+
+    if(!userData.rows[0].email_verified) {
+      return res.status(401).json({
+        success: false,
+        message: "Email is not verified",
       });
     }
     const user = {
@@ -32,7 +43,7 @@ export const authMiddleware = async (req, res, next) => {
       sessionId: decode.sessionId,
     };
     req.user = user;
-    console.log(user)
+    console.log(user);
     next();
   } catch (error) {
     return res.status(401).json({

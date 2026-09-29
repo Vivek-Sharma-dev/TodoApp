@@ -15,7 +15,6 @@ import {
 } from "../utils/token.util.js";
 import AppError from "../utils/AppError.js";
 import { sendVerificationOtp } from "../services/email.service.js";
-import { generateOtp, hashOtpFn } from "../utils/otp.utils.js";
 import {
   createVerificationToken,
   verifyOtp,
@@ -39,7 +38,11 @@ export const register = async (req, res) => {
     const user = await client.query(insertQuery, [name, email, hashedPassword]);
 
     const sessionID = uuidv4();
-    const refreshToken = generateRefreshToken(user.rows[0], sessionID);
+    const refreshToken = generateRefreshToken(
+      user.rows[0],
+      sessionID,
+      "refresh",
+    );
     const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
 
     await createSession(
@@ -89,7 +92,6 @@ export const register = async (req, res) => {
 export const emailVerification = async (req, res) => {
   const { otp } = req.body;
   const refreshToken = req.cookies.refreshToken;
-  console.log(config.REFRESH_TOKEN_LIFETIME);
   if (!refreshToken) {
     throw new AppError("Refresh token not found", 401);
   }
@@ -114,6 +116,7 @@ export const emailVerification = async (req, res) => {
     const refreshTokenNew = generateRefreshToken(
       user.rows[0],
       decode.sessionId,
+      "refresh",
     );
     const hashedRefreshTokenNew = generateHashedRefreshToken(refreshTokenNew);
     const sessionUpdateQuery =
@@ -136,7 +139,11 @@ export const emailVerification = async (req, res) => {
       sameSite: "strict",
       maxAge: new Date(Date.now() + config.REFRESH_TOKEN_LIFETIME),
     });
-    const accessToken = generateAccessToken(user.rows[0], decode.sessionId);
+    const accessToken = generateAccessToken(
+      user.rows[0],
+      decode.sessionId,
+      "access",
+    );
 
     res.status(200).json({
       success: true,
@@ -170,7 +177,7 @@ export const login = async (req, res) => {
     throw new AppError("Invalid password or email", 401);
   }
   const sessionID = uuidv4();
-  const refreshToken = generateRefreshToken(user.rows[0], sessionID);
+  const refreshToken = generateRefreshToken(user.rows[0], sessionID, "refresh");
   const hashedRefreshToken = generateHashedRefreshToken(refreshToken);
   const session = await createSession(
     pool,
@@ -199,10 +206,10 @@ export const login = async (req, res) => {
         },
       },
       message: "User logged in successfully",
-      note: "Your email is still not verified please verified it for get access of our app"
+      note: "Your email is still not verified please verified it for get access of our app",
     });
   }
-  const accessToken = generateAccessToken(user.rows[0], session.id);
+  const accessToken = generateAccessToken(user.rows[0], session.id, "access");
 
   return res.status(200).json({
     success: true,
@@ -221,7 +228,6 @@ export const login = async (req, res) => {
 // refresh the access token
 export const refresh = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  console.log("refresh token is: ", refreshToken);
   if (!refreshToken) {
     throw new AppError("Refresh token not found", 401);
   }
@@ -230,7 +236,7 @@ export const refresh = async (req, res) => {
     decode.sessionId,
   ]);
   const user = await pool.query(
-    "SELECT email, name, id FROM users WHERE id = $1",
+    "SELECT email, name, id, email_verified FROM users WHERE id = $1",
     [decode.id],
   );
   if (
@@ -239,6 +245,13 @@ export const refresh = async (req, res) => {
     new Date(session.rows[0].refresh_token_expiry_at) < new Date()
   ) {
     throw new AppError("Invalid token", 401);
+  }
+
+  if (user.rows[0].email_verified === false) {
+    throw new AppError(
+      "Your email is still not verified please verified it for get access of our app",
+      401,
+    );
   }
 
   const isRefreshTokenValid = compareHashedRefreshTokens(
@@ -252,6 +265,7 @@ export const refresh = async (req, res) => {
   const refreshTokenNew = generateRefreshToken(
     user.rows[0],
     session.rows[0].id,
+    "refresh",
   );
   const hashedRefreshTokenNew = generateHashedRefreshToken(refreshTokenNew);
   const updateSessionQuery =
@@ -261,7 +275,7 @@ export const refresh = async (req, res) => {
     new Date(Date.now() + config.REFRESH_TOKEN_LIFETIME),
     session.rows[0].id,
   ]);
-  const accessToken = generateAccessToken(user.rows[0], session.rows[0].id);
+  const accessToken = generateAccessToken(user.rows[0], session.rows[0].id, "access");
 
   res.cookie("refreshToken", refreshTokenNew, {
     httpOnly: true,
