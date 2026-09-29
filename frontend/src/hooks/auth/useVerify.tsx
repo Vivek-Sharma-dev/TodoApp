@@ -3,18 +3,24 @@ import type { ServerVerifyResponseType } from "../../types/auth/auth-response.ty
 import type { AxiosError } from "axios";
 import type { ServerErrorType } from "../../types/auth/auth-error.type";
 import { verify } from "../../services/auth/register.api";
+import { setAccessToken } from "../../auth/tokenStore";
 
 export const useVerify = () => {
-    return useMutation<ServerVerifyResponseType, AxiosError<ServerErrorType>, { otp: string }>({
-        mutationFn: async (data: { otp: string }) => {
-            const response = await verify(data)
-            return response.data;
-        },
-        onError: (error) => {
-            console.error("Registration error:", error);
-        },
-        onSuccess: (data) => {
-            console.log("Registration successful:", data);
-        }
-    })
-}
+  return useMutation<
+    ServerVerifyResponseType,
+    AxiosError<ServerErrorType>,
+    { otp: string }
+  >({
+    mutationFn: async (data: { otp: string }) => {
+      const response = await verify(data);
+      return response.data;
+    },
+    onError: (error) => {
+      console.error("Registration error:", error);
+    },
+    onSuccess: (data) => {
+      setAccessToken(data.data.accessToken);
+      console.log("Registration successful:", data);
+    },
+  });
+};

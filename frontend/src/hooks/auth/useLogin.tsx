@@ -4,6 +4,7 @@ import type { ServerErrorType } from "../../types/auth/auth-error.type";
 import type { LoginInput } from "../../../../shared/schemas/auth.schema";
 import { login } from "../../services/auth/login.api";
 import type { AxiosError } from "axios";
+import { setAccessToken } from "../../auth/tokenStore";
 
 export const useLogin = () => {
   return useMutation<
@@ -19,6 +20,9 @@ export const useLogin = () => {
       console.error("Login error:", error);
     },
     onSuccess: (data) => {
+      if(data.data.accessToken) {
+        setAccessToken(data.data.accessToken)
+      }
       console.log("Login successful:", data);
     },
   });
