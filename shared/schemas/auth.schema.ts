@@ -23,6 +23,8 @@ export const emailVerificationSchema = z.object({
   otp: z.string().min(6, "OTP must be at least 6 characters long"),
 })
 
+
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 

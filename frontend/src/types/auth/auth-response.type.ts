@@ -29,3 +29,15 @@ export type ServerLoginResponseType = {
     };
     message: string;
 };
+
+export type ServerCurrentUserResponseType = {
+  success: boolean;
+  data: {
+    user: {
+      id: string;
+      name: string;
+      email: string;
+    };
+  };
+  message: string;
+};
