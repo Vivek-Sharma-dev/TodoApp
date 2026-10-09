@@ -116,5 +116,3 @@ export const deleteTodo = async (req, res) => {
     message: "Todo deleted successfully",
   });
 };
-
-
