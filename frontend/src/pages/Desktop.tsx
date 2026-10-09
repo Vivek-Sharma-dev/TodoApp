@@ -14,6 +14,7 @@ import {
   Target,
   User,
 } from "lucide-react";
+import { getAccessToken } from "../auth/tokenStore";
 
 const Desktop = () => {
   const currentDate = new Date().toLocaleDateString();
@@ -81,6 +82,7 @@ const Desktop = () => {
 
   return (
     <main className="min-h-screen bg-background text-text-primary">
+      
       <div className="flex min-h-screen">
         {/* =====================================================
             SIDEBAR
