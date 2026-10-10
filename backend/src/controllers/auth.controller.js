@@ -66,10 +66,9 @@ export const register = async (req, res) => {
       client,
       user.rows[0].id,
       "EMAIL_VERIFICATION",
-    );
+    );  
     await client.query("COMMIT");
-    await sendVerificationOtp(email, otp);
-
+    await sendVerificationOtp(email, otp);    
     return res.status(201).json({
       success: true,
       data: {
