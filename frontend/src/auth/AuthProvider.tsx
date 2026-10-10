@@ -1,24 +1,29 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { authBootstrap } from "./authBootstrap";
 import { type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 type AuthContextType = {
   isInitializing: boolean;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isInitializing, setIsInitializing] = useState(true);
-
+  const queryClient = useQueryClient();
   useEffect(() => {
-    let isMuted = true;
+    let isMounted = true;
 
     const initializeAuth = async () => {
       try {
-        await authBootstrap();
+        const user = await authBootstrap();
+
+        if(user && isMounted) {
+          queryClient.setQueryData(["user"], user);
+        }
       } finally {
-        if (isMuted) {
+        if (isMounted) {
           setIsInitializing(false);
         }
       }
@@ -26,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     void initializeAuth();
     return () => {
-      isMuted = false;
+      isMounted = false;
     };
   }, []);
 
@@ -38,12 +43,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 
-export const useAuthContext = () => {
-  const context = useContext(AuthContext);
-
-  if(!context) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-
-  return context;
-}
