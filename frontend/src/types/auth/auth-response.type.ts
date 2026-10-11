@@ -1,33 +1,33 @@
 export type ServerRegisterResponseType = {
-    success: boolean;
-    data: {
-        user?: {
-            id: string;
-            name: string;
-            email: string;
-        };
+  success: boolean;
+  data: {
+    user?: {
+      id: string;
+      name: string;
+      email: string;
     };
-    message: string;
+  };
+  message: string;
 };
 export type ServerVerifyResponseType = {
-    success: boolean;
-    data: {
-      accessToken: string
-    };
-    message: string;
+  success: boolean;
+  data: {
+    accessToken: string;
+  };
+  message: string;
 };
 
 export type ServerLoginResponseType = {
-    success: boolean;
-    data: {
-        user?: {
-            id: string;
-            name: string;
-            email: string;
-        };
-        accessToken?: string
+  success: boolean;
+  data: {
+    user?: {
+      id: string;
+      name: string;
+      email: string;
     };
-    message: string;
+    accessToken?: string;
+  };
+  message: string;
 };
 
 export type ServerCurrentUserResponseType = {
@@ -41,3 +41,5 @@ export type ServerCurrentUserResponseType = {
   };
   message: string;
 };
+
+export type UserType = ServerCurrentUserResponseType["data"]["user"];

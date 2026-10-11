@@ -1,4 +1,3 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
@@ -11,6 +10,7 @@ import Home from "./pages/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Verify from "./pages/auth/Verify.tsx";
 import { AuthProvider } from "./auth/AuthProvider.tsx";
+import ProtectedRoutes from "./components/common/ProtectedRoutes.tsx";
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
@@ -37,9 +37,15 @@ const router = createBrowserRouter([
           },
         ],
       },
+
       {
-        path: "desktop",
-        Component: Desktop,
+        element: <ProtectedRoutes />,
+        children: [
+          {
+            path: "desktop",
+            Component: Desktop,
+          },
+        ],
       },
     ],
   },
