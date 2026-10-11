@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ServerLoginResponseType } from "../../types/auth/auth-response.type";
 import type { ServerErrorType } from "../../types/auth/auth-error.type";
 import type { LoginInput } from "../../../../shared/schemas/auth.schema";
@@ -7,10 +7,12 @@ import type { AxiosError } from "axios";
 import { setAccessToken } from "../../auth/tokenStore";
 
 export const useLogin = () => {
+  const queryClient = useQueryClient();
+
   return useMutation<
-    ServerLoginResponseType,  // response type
-    AxiosError<ServerErrorType>,    // error type
-    LoginInput    // input type
+    ServerLoginResponseType, // response type
+    AxiosError<ServerErrorType>, // error type
+    LoginInput // input type
   >({
     mutationFn: async (data: LoginInput) => {
       const response = await login(data);
@@ -20,8 +22,10 @@ export const useLogin = () => {
       console.error("Login error:", error);
     },
     onSuccess: (data) => {
-      if(data.data.accessToken) {
-        setAccessToken(data.data.accessToken)
+      const { user, accessToken } = data.data;
+      if (user && accessToken) {
+        setAccessToken(accessToken);
+        queryClient.setQueryData(["currentUser"], user);
       }
       console.log("Login successful:", data);
     },
