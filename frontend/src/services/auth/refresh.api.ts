@@ -5,6 +5,9 @@ export const rotateToken = async () => {
     const response = await client.post("/auth/refresh");
     return response.data;
   } catch (error) {
-    console.error("Error during token rotation:", error);
+    console.error(
+      "Error during token rotation:",
+      error.response?.data || error.message,
+    );
   }
 };

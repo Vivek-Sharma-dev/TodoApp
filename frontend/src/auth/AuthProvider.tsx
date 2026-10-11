@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const user = await authBootstrap();
 
         if(user && isMounted) {
-          queryClient.setQueryData(["user"], user);
+          queryClient.setQueryData(["currentUser"], user);
         }
       } finally {
         if (isMounted) {
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [queryClient]);
 
   return (
     <AuthContext.Provider value={{ isInitializing }}>

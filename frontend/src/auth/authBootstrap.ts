@@ -6,12 +6,18 @@ export const authBootstrap = async () => {
   try {
     const response = await rotateToken();
     const accessToken = response.data.accessToken;
+
+    if(!accessToken) {
+      clearAccessToken();
+      return null;
+    }
+
     setAccessToken(accessToken);
     const userResponse = await getMe();
 
     return userResponse.data.user;
+    // eslint-disable-next-line
   } catch (error) {
-    console.error("Error during auth bootstrap:", error);
     clearAccessToken();
     return null;
   }

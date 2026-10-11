@@ -1,10 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { getMe } from "../../services/auth/me.api";
-import type { ServerCurrentUserResponseType } from "../../types/auth/auth-response.type";
+import type { UserType } from "../../types/auth/auth-response.type";
 
 export const useCurrentUser = () => {
-  return useQuery<ServerCurrentUserResponseType>({
+  return useQuery<UserType>({
     queryKey: ["currentUser"],
-    queryFn: getMe,
+    queryFn: async () => {
+      const response = await getMe();
+      return response.data.user
+    },
+    enabled: false, // Disable automatic fetching on mount
   });
 };
