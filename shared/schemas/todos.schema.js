@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createTodoSchema = z.object({
-  title: z.string().trim().min(3, "Title is too short"),
+  title: z.string().trim().min(3, "Title is too short").max(100, "Title is too long"),
   description: z.string().trim().optional(),
   priority: z.enum(
     ["low", "medium", "high"],
@@ -12,7 +12,7 @@ export const createTodoSchema = z.object({
 
 export const updateTodoSchema = z
   .object({
-    title: z.string().trim().min(3, "Title is too short").optional(),
+    title: z.string().trim().min(3, "Title is too short").max(100, "Title is too long").optional(),
     description: z.string().trim().optional(),
     priority: z
       .enum(
@@ -27,7 +27,6 @@ export const updateTodoSchema = z
     message: "At least one field is required",
   });
 
-
-  export const getTodoSchema = z.object({
-    id: z.string().uuid("Invalid todo ID"),
-  });
+export const getTodoSchema = z.object({
+  id: z.string().uuid("Invalid todo ID"),
+});

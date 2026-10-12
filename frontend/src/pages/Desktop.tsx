@@ -14,10 +14,10 @@ import {
   Target,
   User,
 } from "lucide-react";
-import { getAccessToken } from "../auth/tokenStore";
-
+import { useCurrentUser } from "../hooks/auth/useCurrentUser";
 const Desktop = () => {
   const currentDate = new Date().toLocaleDateString();
+  const { data: currentUser} = useCurrentUser();
   const stats = [
     {
       label: "Total Tasks",
@@ -151,11 +151,11 @@ const Desktop = () => {
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-text-primary">
-                  Vivek Sharma
+                  {currentUser.name.split(" ")[0]}
                 </p>
 
                 <p className="truncate text-xs text-text-muted">
-                  vivek@example.com
+                  {currentUser.email}
                 </p>
               </div>
 

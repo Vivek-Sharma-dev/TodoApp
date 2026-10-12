@@ -16,7 +16,7 @@ export const useLogin = () => {
   >({
     mutationFn: async (data: LoginInput) => {
       const response = await login(data);
-      return response.data;
+      return response;
     },
     onError: (error) => {
       console.error("Login error:", error);
