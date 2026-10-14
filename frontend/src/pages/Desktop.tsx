@@ -1,16 +1,11 @@
 import {
-  Bell,
   CalendarDays,
   CheckCircle2,
-  ChevronDown,
   Circle,
   Clock3,
-  LayoutDashboard,
   ListTodo,
   MoreHorizontal,
   Plus,
-  Search,
-  Settings,
   Target,
   User,
 } from "lucide-react";
@@ -22,6 +17,7 @@ import ErrorState from "../components/common/states/ErrorState";
 import { useState } from "react";
 import Navbar from "../components/layout/Navbar";
 import Header from "../components/layout/Header";
+import AddTodoModal from "../components/todos/AddTodoModal";
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString("en-US", {
@@ -40,6 +36,7 @@ const getGreeting = () => {
 
 const Desktop = () => {
   const { data: currentUser, isPending: isUserPending } = useCurrentUser();
+  const [addTodo, setAddTodo] = useState<boolean>(false)
   const {
     data: todosResponse,
     isPending: isTodosPending,
@@ -187,6 +184,7 @@ const Desktop = () => {
 
                 <button
                   type="button"
+                  onClick={() => setAddTodo(true)}
                   className="flex items-center justify-center gap-2 rounded-button bg-brand px-4 py-2.5 text-sm font-semibold text-background transition hover:bg-brand-hover"
                 >
                   <Plus className="h-4 w-4" />
@@ -591,6 +589,9 @@ const Desktop = () => {
           </div>
         </div>
       </div>
+
+      {addTodo && <AddTodoModal setAddTodo={setAddTodo}/>}
+   
     </main>
   );
 };

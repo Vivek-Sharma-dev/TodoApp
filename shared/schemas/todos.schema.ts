@@ -7,7 +7,7 @@ export const createTodoSchema = z.object({
     ["low", "medium", "high"],
     "Priority must be one of low, medium, or high",
   ),
-  due_date: z.coerce.date("Due Date is invalid"),
+  due_date: z.coerce.date("Due Date is invalid").optional,
 });
 
 export const updateTodoSchema = z
@@ -30,3 +30,6 @@ export const updateTodoSchema = z
 export const getTodoSchema = z.object({
   id: z.string().uuid("Invalid todo ID"),
 });
+
+
+export type AddTodoType = z.infer<typeof createTodoSchema>

@@ -99,3 +99,8 @@ input:-webkit-autofill:active {
   box-shadow: 0 0 0 1000px var(--color-background) inset;
   transition: background-color 9999s ease-in-out 0s;
 }
+
+
+.no-scroll::-webkit-scrollbar {
+  display: none;
+}
