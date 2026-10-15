@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import {
   AlignLeft,
@@ -10,9 +11,28 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import { type AddTodoType } from "../../../../shared/schemas/todos.schema";
+
+import {
+  createTodoSchema,
+  type AddTodoType,
+} from "../../../../shared/schemas/todos.schema";
+import { useAddTodo } from "../../hooks/todos/useAddTodo";
 
 type Priority = "low" | "medium" | "high";
+
+type TodoFieldErrors = {
+  title: string;
+  description: string;
+  priority: string;
+  due_date: string;
+};
+
+const initialErrors: TodoFieldErrors = {
+  title: "",
+  description: "",
+  priority: "",
+  due_date: "",
+};
 
 const priorityOptions: {
   value: Priority;
@@ -24,7 +44,9 @@ const priorityOptions: {
   { value: "high", label: "High", dot: "bg-rose-400" },
 ];
 
-const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const hours = Array.from({ length: 24 }, (_, i) =>
+  String(i).padStart(2, "0"),
+);
 
 const minutes = ["00", "15", "30", "45"];
 
@@ -42,6 +64,7 @@ function CustomTimeSelect({
   label,
 }: CustomTimeSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div className="relative">
       <button
@@ -88,38 +111,31 @@ function CustomTimeSelect({
 const AddTodoModal = ({
   setAddTodo,
 }: {
-  setAddTodo: (arg0: boolean) => void;
+  setAddTodo: (open: boolean) => void;
 }) => {
-  const [priority, setPriority] = useState<Priority>("medium");
   const [isPriorityOpen, setIsPriorityOpen] = useState(false);
-
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
   const [selectedHour, setSelectedHour] = useState("09");
   const [selectedMinute, setSelectedMinute] = useState("00");
 
   const [data, setData] = useState<AddTodoType>({
     title: "",
     description: "",
-    priority: "low",
+    priority: "medium",
     due_date: null,
   });
 
-  const updateDueDate = (date: Date, hour: string, minute: string) => {
-    const dueDate = new Date(date);
+  const [errors, setErrors] = useState<TodoFieldErrors>(initialErrors);
+  const [serverError, setServerError] = useState("");
 
-    dueDate.setHours(Number(hour), Number(minute), 0, 0);
+  const { mutate, isPending } = useAddTodo();
 
-    setData((prev) => ({
-      ...prev,
-      due_date: dueDate,
-    }));
-  };
-  const currentPriority = priorityOptions.find(
-    (option) => option.value === priority,
-  )!;
+  const currentPriority =
+    priorityOptions.find((option) => option.value === data.priority) ??
+    priorityOptions[1];
 
   const year = calendarMonth.getFullYear();
   const month = calendarMonth.getMonth();
@@ -140,29 +156,77 @@ const AddTodoModal = ({
       })
     : "Choose a date";
 
-  // Convert the selected 24-hour time into a readable 12-hour time.
   const hour24 = Number(selectedHour);
   const hour12 = hour24 % 12 || 12;
   const period = hour24 >= 12 ? "PM" : "AM";
-
   const formattedTime = `${hour12}:${selectedMinute} ${period}`;
 
-  // Display the selected date AND time in the date-picker button.
   const formattedDateTime = selectedDate
     ? `${formattedDate} · ${formattedTime}`
-    : `${formattedDate} · ${formattedTime}`;
+    : "No due date";
+
+  const updateField = <K extends keyof AddTodoType>(
+    field: K,
+    value: AddTodoType[K],
+  ) => {
+    setData((prev) => ({ ...prev, [field]: value }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
+
+    setServerError("");
+  };
+
+  const updateDueDate = (
+    date: Date,
+    hour: string,
+    minute: string,
+  ) => {
+    const dueDate = new Date(date);
+    dueDate.setHours(Number(hour), Number(minute), 0, 0);
+
+    updateField("due_date", dueDate);
+    setSelectedDate(new Date(date));
+  };
 
   const changeMonth = (amount: number) => {
     setCalendarMonth(
       (current) =>
-        new Date(current.getFullYear(), current.getMonth() + amount, 1),
+        new Date(
+          current.getFullYear(),
+          current.getMonth() + amount,
+          1,
+        ),
     );
   };
 
   const selectDate = (day: number) => {
     const date = new Date(year, month, day);
-    setSelectedDate(date);
     updateDueDate(date, selectedHour, selectedMinute);
+  };
+
+  const handleHourChange = (hour: string) => {
+    setSelectedHour(hour);
+
+    if (selectedDate) {
+      updateDueDate(selectedDate, hour, selectedMinute);
+    }
+  };
+
+  const handleMinuteChange = (minute: string) => {
+    setSelectedMinute(minute);
+
+    if (selectedDate) {
+      updateDueDate(selectedDate, selectedHour, minute);
+    }
+  };
+
+  const clearDueDate = () => {
+    setSelectedDate(null);
+    updateField("due_date", null);
+    setIsDatePickerOpen(false);
   };
 
   const isSelectedDay = (day: number) =>
@@ -180,11 +244,97 @@ const AddTodoModal = ({
     );
   };
 
-  console.log(data);
+  const isPastDate = (day: number) => {
+    const candidate = new Date(year, month, day);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    return candidate < today;
+  };
+
+  const handleSubmit = () => {
+    setErrors(initialErrors);
+    setServerError("");
+
+    const result = createTodoSchema.safeParse(data);
+
+    if (!result.success) {
+      const fieldErrors: TodoFieldErrors = { ...initialErrors };
+
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof TodoFieldErrors;
+
+        if (field in fieldErrors && !fieldErrors[field]) {
+          fieldErrors[field] = issue.message;
+        }
+      }
+
+      setErrors(fieldErrors);
+      return;
+    }
+
+    const dueDate = data.due_date;
+
+    if (
+      dueDate instanceof Date &&
+      dueDate.getTime() <= Date.now()
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        due_date: "Choose a future date and time.",
+      }));
+      setIsDatePickerOpen(true);
+      return;
+    }
+
+    // Don't send null for an optional due date.
+    // The backend can then treat an omitted due_date as no due date.
+    const { due_date, ...todoFields } = result.data;
+
+    const payload = {
+      ...todoFields,
+      ...(due_date ? { due_date } : {}),
+    } as AddTodoType;
+
+    mutate(payload, {
+      onSuccess: () => {
+        setAddTodo(false);
+      },
+      onError: (err) => {
+        const message = err.response?.data?.message;
+
+        setServerError(
+          typeof message === "string"
+            ? message
+            : "Unable to create your task. Please try again.",
+        );
+      },
+    });
+  };
+
+  const handleClose = () => {
+    if (!isPending) {
+      setAddTodo(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm">
-      <div className="my-auto w-full max-w-2xl overflow-visible rounded-2xl border border-border bg-surface shadow-2xl">
-        {/* Modal header */}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          handleClose();
+        }
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-todo-title"
+        className="my-auto w-full max-w-2xl overflow-visible rounded-2xl border border-border bg-surface shadow-2xl"
+      >
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-5">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
@@ -192,7 +342,10 @@ const AddTodoModal = ({
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">
+              <h2
+                id="add-todo-title"
+                className="text-lg font-semibold text-text-primary"
+              >
                 Add a new task
               </h2>
               <p className="mt-0.5 text-sm text-text-secondary">
@@ -204,15 +357,25 @@ const AddTodoModal = ({
           <button
             type="button"
             aria-label="Close modal"
-            onClick={() => setAddTodo(false)}
-            className="rounded-lg p-2 text-text-secondary transition hover:bg-background hover:text-text-primary"
+            disabled={isPending}
+            onClick={handleClose}
+            className="rounded-lg p-2 text-text-secondary transition hover:bg-background hover:text-text-primary disabled:opacity-50"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Modal body */}
+        {/* Body */}
         <div className="space-y-5 px-6 py-6">
+          {serverError && (
+            <div
+              role="alert"
+              className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400"
+            >
+              {serverError}
+            </div>
+          )}
+
           {/* Title */}
           <div className="space-y-2">
             <label
@@ -223,18 +386,26 @@ const AddTodoModal = ({
             </label>
 
             <input
-              id="title"
+              id="todo-title"
               name="title"
               type="text"
-              onChange={(e) =>
-                setData((prev) => ({
-                  ...prev,
-                  title: e.target.value,
-                }))
-              }
+              autoFocus
+              maxLength={100}
+              value={data.title}
+              aria-invalid={Boolean(errors.title)}
+              aria-describedby={errors.title ? "todo-title-error" : undefined}
+              onChange={(event) => updateField("title", event.target.value)}
               placeholder="What needs to be done?"
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/60 focus:border-brand focus:ring-2 focus:ring-brand/10"
+              className={`w-full rounded-xl border ${
+                errors.title ? "border-rose-500" : "border-border"
+              } bg-background px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/60 focus:border-brand focus:ring-2 focus:ring-brand/10`}
             />
+
+            {errors.title && (
+              <p id="todo-title-error" className="text-sm text-rose-400">
+                {errors.title}
+              </p>
+            )}
           </div>
 
           {/* Description */}
@@ -251,23 +422,30 @@ const AddTodoModal = ({
             </label>
 
             <textarea
-              id="description"
+              id="todo-description"
               name="description"
-              onChange={(e) =>
-                setData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
               rows={3}
+              value={data.description ?? ""}
+              aria-invalid={Boolean(errors.description)}
+              onChange={(event) =>
+                updateField("description", event.target.value)
+              }
               placeholder="Add some details about this task..."
-              className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/60 focus:border-brand focus:ring-2 focus:ring-brand/10"
+              className={`w-full resize-none rounded-xl border ${
+                errors.description ? "border-rose-500" : "border-border"
+              } bg-background px-4 py-3 text-sm text-text-primary outline-none transition placeholder:text-text-secondary/60 focus:border-brand focus:ring-2 focus:ring-brand/10`}
             />
+
+            {errors.description && (
+              <p className="text-sm text-rose-400">
+                {errors.description}
+              </p>
+            )}
           </div>
 
           {/* Priority and due date */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Custom priority dropdown */}
+            {/* Priority */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-text-primary">
                 <Flag size={15} className="text-text-secondary" />
@@ -277,8 +455,8 @@ const AddTodoModal = ({
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setIsPriorityOpen((prev) => !prev)}
                   aria-expanded={isPriorityOpen}
+                  onClick={() => setIsPriorityOpen((prev) => !prev)}
                   className="flex w-full items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-sm transition hover:border-brand/60"
                 >
                   <span className="flex items-center gap-2 text-text-primary">
@@ -303,15 +481,11 @@ const AddTodoModal = ({
                         key={option.value}
                         type="button"
                         onClick={() => {
-                          setData((prev) => ({
-                            ...prev,
-                            priority: option.value,
-                          }));
-                          setPriority(option.value)
+                          updateField("priority", option.value);
                           setIsPriorityOpen(false);
                         }}
                         className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition ${
-                          priority === option.value
+                          data.priority === option.value
                             ? "bg-brand/10 text-brand"
                             : "text-text-secondary hover:bg-background hover:text-text-primary"
                         }`}
@@ -323,7 +497,7 @@ const AddTodoModal = ({
                           {option.label}
                         </span>
 
-                        {priority === option.value && (
+                        {data.priority === option.value && (
                           <span className="text-xs">Selected</span>
                         )}
                       </button>
@@ -331,20 +505,29 @@ const AddTodoModal = ({
                   </div>
                 )}
               </div>
+
+              {errors.priority && (
+                <p className="text-sm text-rose-400">{errors.priority}</p>
+              )}
             </div>
 
-            {/* Date and time trigger */}
+            {/* Due date */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm font-medium text-text-primary">
                 <CalendarDays size={15} className="text-text-secondary" />
                 Due date & time
+                <span className="font-normal text-text-secondary">
+                  (optional)
+                </span>
               </label>
 
               <button
                 type="button"
-                onClick={() => setIsDatePickerOpen((prev) => !prev)}
                 aria-expanded={isDatePickerOpen}
-                className="flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-background px-3 py-3 text-left text-sm transition hover:border-brand/60"
+                onClick={() => setIsDatePickerOpen((prev) => !prev)}
+                className={`flex w-full min-w-0 items-center justify-between gap-2 rounded-xl border ${
+                  errors.due_date ? "border-rose-500" : "border-border"
+                } bg-background px-3 py-3 text-left text-sm transition hover:border-brand/60`}
               >
                 <span
                   className={`min-w-0 truncate ${
@@ -361,10 +544,14 @@ const AddTodoModal = ({
                   className="shrink-0 text-text-secondary"
                 />
               </button>
+
+              {errors.due_date && (
+                <p className="text-sm text-rose-400">{errors.due_date}</p>
+              )}
             </div>
           </div>
 
-          {/* Custom calendar and time picker */}
+          {/* Calendar and time picker */}
           {isDatePickerOpen && (
             <div className="relative rounded-2xl border border-border bg-background p-4">
               <button
@@ -406,16 +593,17 @@ const AddTodoModal = ({
                     </button>
                   </div>
 
-                  {/* Weekday headings and calendar dates */}
                   <div className="grid grid-cols-7 gap-1 text-center">
-                    {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-                      <div
-                        key={day}
-                        className="py-2 text-xs font-medium text-text-secondary"
-                      >
-                        {day}
-                      </div>
-                    ))}
+                    {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(
+                      (day) => (
+                        <div
+                          key={day}
+                          className="py-2 text-xs font-medium text-text-secondary"
+                        >
+                          {day}
+                        </div>
+                      ),
+                    )}
 
                     {calendarDays.map((day, index) =>
                       day === null ? (
@@ -424,9 +612,10 @@ const AddTodoModal = ({
                         <button
                           key={day}
                           type="button"
+                          disabled={isPastDate(day)}
                           aria-pressed={Boolean(isSelectedDay(day))}
                           onClick={() => selectDate(day)}
-                          className={`mx-auto flex size-8 items-center justify-center rounded-lg text-sm transition sm:size-9 ${
+                          className={`mx-auto flex size-8 items-center justify-center rounded-lg text-sm transition disabled:cursor-not-allowed disabled:opacity-30 sm:size-9 ${
                             isSelectedDay(day)
                               ? "bg-brand text-white"
                               : isToday(day)
@@ -453,16 +642,18 @@ const AddTodoModal = ({
                       label="Select hour"
                       value={selectedHour}
                       options={hours}
-                      onSelect={setSelectedHour}
+                      onSelect={handleHourChange}
                     />
 
-                    <span className="font-semibold text-text-secondary">:</span>
+                    <span className="font-semibold text-text-secondary">
+                      :
+                    </span>
 
                     <CustomTimeSelect
                       label="Select minutes"
                       value={selectedMinute}
                       options={minutes}
-                      onSelect={setSelectedMinute}
+                      onSelect={handleMinuteChange}
                     />
 
                     <span className="text-xs font-medium text-text-secondary">
@@ -476,6 +667,16 @@ const AddTodoModal = ({
                       {formattedTime}
                     </span>
                   </p>
+
+                  {selectedDate && (
+                    <button
+                      type="button"
+                      onClick={clearDueDate}
+                      className="mt-3 text-sm text-rose-400 transition hover:text-rose-300"
+                    >
+                      Remove due date
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -490,22 +691,31 @@ const AddTodoModal = ({
           )}
         </div>
 
-        {/* Modal footer */}
+        {/* Footer */}
         <div className="flex justify-end gap-3 rounded-b-2xl border-t border-border bg-background/50 px-6 py-4">
           <button
-            onClick={() => setAddTodo(false)}
             type="button"
-            className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-text-secondary transition hover:bg-background hover:text-text-primary"
+            disabled={isPending}
+            onClick={handleClose}
+            className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-text-secondary transition hover:bg-background hover:text-text-primary disabled:opacity-50"
           >
             Cancel
           </button>
 
           <button
             type="button"
-            className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-110"
+            onClick={handleSubmit}
+            disabled={isPending}
+            className="flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Plus size={16} />
-            Add task
+            {isPending ? (
+              "Adding..."
+            ) : (
+              <>
+                <Plus size={16} />
+                Add task
+              </>
+            )}
           </button>
         </div>
       </div>

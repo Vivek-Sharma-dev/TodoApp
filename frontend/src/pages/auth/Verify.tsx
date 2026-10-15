@@ -30,7 +30,7 @@ const Verify = () => {
 
     mutate(result.data, {
       onSuccess: () => {
-        navigate("/desktop", { replace: true });
+        navigate("/", { replace: true });
       },
     });
   };

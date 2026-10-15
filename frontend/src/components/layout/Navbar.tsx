@@ -21,7 +21,7 @@ const Navbar = () => {
       id: "dashboard",
       label: "Dashboard",
       icon: <LayoutDashboard className="h-4 w-4" />,
-      path: "/desktop",
+      path: "/",
     },
     {
       id: "my tasks",

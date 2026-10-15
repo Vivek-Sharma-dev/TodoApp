@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validate } from "../middlewares/validate.middleware.js";
-import * as todoSchemas from "../../../shared/schemas/todos.schema.js";
+import * as todoSchemas from "../../../shared/schemas/todos.schema.ts";
 import * as todoController from "../controllers/todos.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import asyncHandler from "../utils/asyncHandler.js";

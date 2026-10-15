@@ -4,9 +4,8 @@ import App from "./App.tsx";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Login from "./pages/auth/Login.tsx";
 import Register from "./pages/auth/Register.tsx";
-import Desktop from "./pages/Desktop.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
 import AuthLayout from "./pages/auth/AuthLayout.tsx";
-import Home from "./pages/Home.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Verify from "./pages/auth/Verify.tsx";
 import { AuthProvider } from "./auth/AuthProvider.tsx";
@@ -18,7 +17,16 @@ const router = createBrowserRouter([
     path: "/",
     Component: App,
     children: [
-      { index: true, Component: Home },
+      {
+        element: <ProtectedRoutes />,
+        children: [
+          {
+            
+            index: true,
+            Component: Dashboard,
+          },
+        ],
+      },
       {
         path: "auth",
         Component: AuthLayout,
@@ -34,16 +42,6 @@ const router = createBrowserRouter([
           {
             path: "verify",
             Component: Verify,
-          },
-        ],
-      },
-
-      {
-        element: <ProtectedRoutes />,
-        children: [
-          {
-            path: "desktop",
-            Component: Desktop,
           },
         ],
       },
