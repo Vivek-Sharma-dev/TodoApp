@@ -55,7 +55,7 @@ const Login = () => {
     // call api
     mutate(result.data, {
       onSuccess: () => {
-        navigate("/desktop", { replace: true });
+        navigate("/", { replace: true });
       },
     });
   };

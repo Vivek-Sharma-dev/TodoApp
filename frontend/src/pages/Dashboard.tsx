@@ -14,7 +14,7 @@ import { useCurrentUser } from "../hooks/auth/useCurrentUser";
 import { useAllTodos } from "../hooks/todos/useAllTodos";
 import Loading from "../components/common/states/Loading";
 import ErrorState from "../components/common/states/ErrorState";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Navbar from "../components/layout/Navbar";
 import Header from "../components/layout/Header";
 import AddTodoModal from "../components/todos/AddTodoModal";
@@ -34,7 +34,7 @@ const getGreeting = () => {
   return "Good evening";
 };
 
-const Desktop = () => {
+const Dashboard = () => {
   const { data: currentUser, isPending: isUserPending } = useCurrentUser();
   const [addTodo, setAddTodo] = useState<boolean>(false)
   const {
@@ -286,12 +286,11 @@ const Desktop = () => {
                     {todayPendingTasks.length > 0 ? (
                       <div className="divide-y divide-border">
                         {todayPendingTasks.splice(0, 5).map((task) => (
-                          <>
+                          <Fragment key={task.id}>
                             {tab === "all" ? (
                               <>
                                 {!task.completed && (
                                   <div
-                                    key={task.id}
                                     className="group flex items-start gap-4 p-5 transition hover:bg-background/50"
                                   >
                                     <button
@@ -346,7 +345,6 @@ const Desktop = () => {
                                 )}
                                 {task.completed && (
                                   <div
-                                    key={task.id}
                                     className="group flex items-start gap-4 p-5 transition hover:bg-background/50"
                                   >
                                     <button
@@ -407,7 +405,6 @@ const Desktop = () => {
                               <>
                                 {!task.completed && (
                                   <div
-                                    key={task.id}
                                     className="group flex items-start gap-4 p-5 transition hover:bg-background/50"
                                   >
                                     <button
@@ -462,7 +459,7 @@ const Desktop = () => {
                                 )}
                               </>
                             )}
-                          </>
+                          </Fragment>
                         ))}
                         {todayPendingTasks.length > 5 && (
                           <div className="border-t border-border p-4 text-center">
@@ -596,4 +593,4 @@ const Desktop = () => {
   );
 };
 
-export default Desktop;
+export default Dashboard;

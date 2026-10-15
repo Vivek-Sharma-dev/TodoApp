@@ -7,7 +7,7 @@ export const createTodoSchema = z.object({
     ["low", "medium", "high"],
     "Priority must be one of low, medium, or high",
   ),
-  due_date: z.coerce.date("Due Date is invalid").optional,
+  due_date: z.coerce.date("Due Date is invalid").nullable().optional(),
 });
 
 export const updateTodoSchema = z
