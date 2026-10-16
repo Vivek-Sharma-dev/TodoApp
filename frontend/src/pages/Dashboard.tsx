@@ -18,6 +18,8 @@ import { Fragment, useState } from "react";
 import Navbar from "../components/layout/Navbar";
 import Header from "../components/layout/Header";
 import AddTodoModal from "../components/todos/AddTodoModal";
+import { TodoOptions } from "../components/todos/TodoOptions";
+import TodoUI from "../components/todos/TodoUI";
 
 const formatDate = (date: Date) =>
   date.toLocaleDateString("en-US", {
@@ -36,7 +38,7 @@ const getGreeting = () => {
 
 const Dashboard = () => {
   const { data: currentUser, isPending: isUserPending } = useCurrentUser();
-  const [addTodo, setAddTodo] = useState<boolean>(false)
+  const [addTodo, setAddTodo] = useState<boolean>(false);
   const {
     data: todosResponse,
     isPending: isTodosPending,
@@ -285,14 +287,15 @@ const Dashboard = () => {
 
                     {todayPendingTasks.length > 0 ? (
                       <div className="divide-y divide-border">
+                        <div>
+                          <TodoUI todo={todayPendingTasks[0]} />
+                        </div>
                         {todayPendingTasks.splice(0, 5).map((task) => (
                           <Fragment key={task.id}>
                             {tab === "all" ? (
                               <>
                                 {!task.completed && (
-                                  <div
-                                    className="group flex items-start gap-4 p-5 transition hover:bg-background/50"
-                                  >
+                                  <div className="group flex items-start gap-4 p-5 transition hover:bg-background/50">
                                     <button
                                       type="button"
                                       aria-label={`Mark ${task.title} as complete`}
@@ -334,19 +337,22 @@ const Dashboard = () => {
                                       </div>
                                     </div>
 
-                                    <button
-                                      type="button"
-                                      aria-label={`More options for ${task.title}`}
-                                      className="shrink-0 text-text-muted transition hover:text-text-primary sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                                    >
-                                      <MoreHorizontal className="h-5 w-5" />
-                                    </button>
+                                    <TodoOptions
+                                      completed={task.completed}
+                                      onEdit={() => {
+                                        console.log("Edit Todo:", task.id);
+                                      }}
+                                      onToggleComplete={() => {
+                                        console.log("Toggle Todo:", task.id);
+                                      }}
+                                      onDelete={() => {
+                                        console.log("Delete Todo:", task.id);
+                                      }}
+                                    />
                                   </div>
                                 )}
                                 {task.completed && (
-                                  <div
-                                    className="group flex items-start gap-4 p-5 transition hover:bg-background/50"
-                                  >
+                                  <div className="group flex items-start gap-4 p-5 transition hover:bg-background/50">
                                     <button
                                       type="button"
                                       aria-label={`Mark ${task.title} as complete`}
@@ -404,9 +410,7 @@ const Dashboard = () => {
                             ) : (
                               <>
                                 {!task.completed && (
-                                  <div
-                                    className="group flex items-start gap-4 p-5 transition hover:bg-background/50"
-                                  >
+                                  <div className="group flex items-start gap-4 p-5 transition hover:bg-background/50">
                                     <button
                                       type="button"
                                       aria-label={`Mark ${task.title} as complete`}
@@ -587,8 +591,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {addTodo && <AddTodoModal setAddTodo={setAddTodo}/>}
-   
+      {addTodo && <AddTodoModal setAddTodo={setAddTodo} />}
     </main>
   );
 };
