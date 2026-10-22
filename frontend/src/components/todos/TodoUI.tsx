@@ -3,19 +3,49 @@ import { type TodoTypeFrontend } from "../../types/todos/todo.type";
 import { CalendarDays, Circle } from "lucide-react";
 import { useState } from "react";
 import { useDeleteTodo } from "../../hooks/todos/useDeleteTodo";
-import EditTodoModal from "./EditTodoModal";
-
-
+import UpdateTodoModal from "./UpdateTodoModal";
+import { useUpdateTodo } from "../../hooks/todos/useUpdateTodo";
+import ConfirmationModal from "./ConfirmationModal";
 
 const TodoUI = ({ todo }: { todo: TodoTypeFrontend }) => {
   const [editModal, setEditModal] = useState<boolean>(false);
-  const { mutate, isPending, error } = useDeleteTodo();
+  const [completeConfirmation, setCompleteConfirmation] =
+    useState<boolean>(false);
+  const [confirmDeletion, setConfirmDeletion] = useState<boolean>(false);
+  const {
+    mutate: deleteTodo,
+    isPending: isDeleting,
+    error: deletingError,
+  } = useDeleteTodo();
+  const {
+    mutate: updateTodoMutation,
+    isPending: isUpdating,
+    error: updateError,
+  } = useUpdateTodo();
 
+  const handleDeletion = () => {
+    deleteTodo(todo.id, { onSuccess: () => setConfirmDeletion(false) });
+  };
+
+  const handleCompletion = () => {
+    updateTodoMutation(
+      {
+        id: todo.id,
+        data: {
+          completed: true,
+        },
+      },
+      {
+        onSuccess: () => setCompleteConfirmation(false),
+      },
+    );
+  };
   return (
     <>
       <div className="group flex items-start gap-4 p-5 transition hover:bg-background/50">
         <button
           type="button"
+          onClick={() => setCompleteConfirmation((prev) => !prev)}
           aria-label={`Mark ${todo.title} as complete`}
           className="mt-0.5 shrink-0 text-text-muted transition hover:text-brand"
         >
@@ -57,16 +87,52 @@ const TodoUI = ({ todo }: { todo: TodoTypeFrontend }) => {
           onEdit={() => {
             setEditModal(true);
           }}
-          onToggleComplete={() => {
-            console.log("Toggle Todo:", todo.id);
-          }}
-          onDelete={() => {
-            mutate(todo.id);
-          }}
-          />
+          onToggleComplete={() => setCompleteConfirmation(true)}
+          onDelete={() => setConfirmDeletion(true)}
+        />
 
-          {editModal && <EditTodoModal /> }
+        {editModal && (
+          <UpdateTodoModal
+            todo={todo}
+            setUpdateTodo={setEditModal}
+            onSave={(id, updatedData) => {
+              updateTodoMutation({
+                id,
+                data: {
+                  title: updatedData.title,
+                  description: updatedData.description,
+                  priority: updatedData.priority,
+                  due_date: updatedData.due_date?.toISOString() ?? null,
+                },
+              });
+            }}
+            isPending={isUpdating}
+            serverError={updateError?.message}
+          />
+        )}
       </div>
+      {completeConfirmation && (
+        <ConfirmationModal
+          action={"completed"}
+          actionName="Mark as Completed"
+          description={`Are you sure you want to mark ${todo.title} as completed?`}
+          onConfirm={handleCompletion}
+          onClose={() => setCompleteConfirmation(false)}
+          isPending={isUpdating}
+          isError={updateError?.message}
+        />
+      )}
+      {confirmDeletion && (
+        <ConfirmationModal
+          action={"deletion"}
+          actionName="Delete Todo"
+          description={`Are you sure you want to Delete ${todo.title}? This action can't be undone`}
+          onConfirm={handleDeletion}
+          onClose={() => setConfirmDeletion(false)}
+          isPending={isDeleting}
+          isError={deletingError?.message}
+        />
+      )}
     </>
   );
 };

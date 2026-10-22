@@ -1,13 +1,17 @@
 import client from "../../api/client";
 
-type Todo = {
-  title: string;
-  description: string;
-  completed: boolean;
+export type TodoUpdateType = {
+  title?: string;
+  description?: string;
+  completed?: boolean;
+  priority?: "low" | "medium" | "high";
+  due_date?: string | null;
 };
 
-
-export const updateTodo = async (id: string, updatedTodo: Todo) => {
-  const response = await client.put(`/todos/${id}`, updatedTodo);
+export const updateTodo = async (
+  id: string,
+  updatedTodo: TodoUpdateType,
+) => {
+  const response = await client.patch(`/todos/${id}`, updatedTodo);
   return response.data;
-}
+};
