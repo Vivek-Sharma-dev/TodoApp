@@ -25,8 +25,6 @@ export const createTodo = async (req, res) => {
   });
 };
 
-
-
 export const getTodo = async (req, res) => {
   const todoId = req.params.id;
   const userId = req.user.id;
@@ -46,10 +44,28 @@ export const getTodo = async (req, res) => {
 
 export const getAllTodos = async (req, res) => {
   const userId = req.user.id;
+  const status = req.query?.status?.toLowerCase();
 
-  const todos = await pool.query("SELECT * FROM todos WHERE user_id = $1", [
-    userId,
-  ]);
+  let todos;
+  let message
+
+  if (status) {
+    if(status === "completed") {
+      todos = await pool.query("SELECT * FROM todos WHERE user_id = $1 AND completed = $2", [userId, true]);
+      message = `Fetch all Completed Todos`;
+    } else if(status === "pending") {
+      todos = await pool.query("SELECT * FROM todos WHERE user_id = $1 AND completed = $2", [userId, false]);
+      message = `Fetch all Pending Todos`;
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status. Allowed values are 'pending' and 'completed'."
+      })
+    }
+  } else {
+    todos = await pool.query("SELECT * FROM todos WHERE user_id = $1", [userId]);
+    message = `Fetch all todos data`
+  }
 
   return res.status(200).json({
     success: true,
@@ -57,7 +73,7 @@ export const getAllTodos = async (req, res) => {
     meta: {
       totalTodos: todos.rows.length,
     },
-    message: "Todos fetched successfully",
+    message: message,
   });
 };
 
