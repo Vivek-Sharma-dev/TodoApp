@@ -41,7 +41,7 @@ export type TodoTypeFrontend = {
     id: string;
     user_id: string;
     title: string;
-    description?: string;
+    description?: string | null | undefined;
     completed: boolean;
     created_at: Date;
     updated_at: Date;

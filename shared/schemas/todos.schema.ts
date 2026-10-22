@@ -21,7 +21,7 @@ export const updateTodoSchema = z
       )
       .optional(),
     completed: z.boolean().optional(),
-    due_date: z.coerce.date("Due Date is invalid").optional(),
+    due_date: z.coerce.date("Due Date is invalid").nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required",
