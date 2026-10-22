@@ -47,24 +47,51 @@ export const getAllTodos = async (req, res) => {
   const status = req.query?.status?.toLowerCase();
 
   let todos;
-  let message
+  let message;
 
   if (status) {
-    if(status === "completed") {
-      todos = await pool.query("SELECT * FROM todos WHERE user_id = $1 AND completed = $2", [userId, true]);
+    if (status === "completed") {
+      todos = await pool.query(
+        "SELECT * FROM todos WHERE user_id = $1 AND completed = $2",
+        [userId, true],
+      );
       message = `Fetch all Completed Todos`;
-    } else if(status === "pending") {
-      todos = await pool.query("SELECT * FROM todos WHERE user_id = $1 AND completed = $2", [userId, false]);
+    } else if (status === "pending") {
+      todos = await pool.query(
+        "SELECT * FROM todos WHERE user_id = $1 AND completed = $2",
+        [userId, false],
+      );
       message = `Fetch all Pending Todos`;
+    } else if (status === "today") {
+      todos = await pool.query(
+        "SELECT * FROM todos WHERE user_id = $1 AND due_date >= CURRENT_DATE AND due_date < CURRENT_DATE + INTERVAL '1 day' ",
+        [userId],
+      );
+      message = `Fetch all today task`;
+    } else if (status === "upcoming") {
+      todos = await pool.query(
+        "SELECT * FROM todos WHERE user_id = $1 AND due_date > CURRENT_DATE + INTERVAL '1 day' ",
+        [userId],
+      );
+      message = `Fetch upcoming todos`;
+    } else if (status === "overdue") {
+      todos = await pool.query(
+        "SELECT * FROM todos WHERE user_id = $1 AND due_date < CURRENT_DATE AND completed = $2 ",
+        [userId, false],
+      );
+      message = `Fetch incomplete todo which are overdue as well`;
     } else {
       return res.status(400).json({
         success: false,
-        message: "Invalid status. Allowed values are 'pending' and 'completed'."
-      })
+        message:
+          "Invalid status. Allowed values are 'pending' and 'completed'.",
+      });
     }
   } else {
-    todos = await pool.query("SELECT * FROM todos WHERE user_id = $1", [userId]);
-    message = `Fetch all todos data`
+    todos = await pool.query("SELECT * FROM todos WHERE user_id = $1", [
+      userId,
+    ]);
+    message = `Fetch all todos data`;
   }
 
   return res.status(200).json({

@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAllTodos } from "../../services/todos/getAllTodos";
-import {type TodoType } from "../../types/todos/todo.type";
+import { getAllTodos, type GetAllTodosResponse } from "../../services/todos/getAllTodos";
 
-
-export const useAllTodos = () => {
-    return useQuery<TodoType>({
-        queryKey: ["todos"],
-        queryFn: getAllTodos,
-    })
-}
+export const useAllTodos = (status?: string | undefined) => {
+  return useQuery<GetAllTodosResponse>({
+    queryKey: ["todos", status],
+    queryFn: () => getAllTodos(status),
+  });
+};
