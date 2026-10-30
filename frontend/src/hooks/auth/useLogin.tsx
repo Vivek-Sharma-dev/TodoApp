@@ -19,7 +19,7 @@ export const useLogin = () => {
       return response;
     },
     onError: (error) => {
-      console.error("Login error:", error);
+      console.error("Login error:", error.message);
     },
     onSuccess: (data) => {
       const { user, accessToken } = data.data;
@@ -27,7 +27,6 @@ export const useLogin = () => {
         setAccessToken(accessToken);
         queryClient.setQueryData(["currentUser"], user);
       }
-      console.log("Login successful:", data);
     },
   });
 };

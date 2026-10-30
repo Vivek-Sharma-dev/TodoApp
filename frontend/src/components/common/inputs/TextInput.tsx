@@ -10,7 +10,7 @@ interface TextInputProps {
     error: string;
 
 }
-
+ 
 const TextInput = ({
   name,
   placeholder,

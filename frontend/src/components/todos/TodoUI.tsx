@@ -49,12 +49,20 @@ const TodoUI = ({ todo }: { todo: TodoTypeFrontend }) => {
           aria-label={`Mark ${todo.title} as complete`}
           className="mt-0.5 shrink-0 text-text-muted transition hover:text-brand"
         >
-          <Circle className="h-5 w-5" />
+          {todo.completed ? (
+            <Circle className="h-5 w-5 text-white/80" fill="#a855f7" />
+          ) : (
+            <Circle className="h-5 w-5" />
+          )}
         </button>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <h4 className="text-sm font-medium text-text-primary">
+          <div
+            className={`flex flex-col gap-2 sm:flex-row sm:items-center ${todo.completed && "text-text-primary/60"}`}
+          >
+            <h4
+              className={`text-sm font-medium text-text-primary ${todo.completed && "line-through text-text-primary/60"}`}
+            >
               {todo.title}
             </h4>
             <span
@@ -78,7 +86,11 @@ const TodoUI = ({ todo }: { todo: TodoTypeFrontend }) => {
 
           <div className="mt-2 flex items-center gap-1.5 text-xs text-text-muted">
             <CalendarDays className="h-3.5 w-3.5" />
-            Due {new Date(todo.due_date).toLocaleString()}
+            {todo.due_date ? (
+              <>Due {new Date(todo.due_date).toLocaleString()}</>
+            ) : (
+              <p className="text-text-muted">No due date</p>
+            )}
           </div>
         </div>
 

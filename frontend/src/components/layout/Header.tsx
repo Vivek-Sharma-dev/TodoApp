@@ -5,13 +5,13 @@ type PropsType = {
   getGreeting: () => string;
   formatDate: (arg0: Date) => string;
   firstName: string;
-  now: Date
+  now: Date;
 };
 
-const Header = ({getGreeting, formatDate, firstName, now}:PropsType) => {
+const Header = ({ getGreeting, formatDate, firstName, now }: PropsType) => {
   return (
     <>
-      <header className="flex min-h-20 items-center justify-between gap-4 border-b border-border bg-background px-5 py-4 sm:px-8">
+      <header className="flex min-h-20 items-center justify-between gap-4 border-b border-border bg-background px-5 py-4 sm:px-8 lg:pl-74">
         <div className="min-w-0">
           <p className="text-sm text-text-muted">{formatDate(now)}</p>
           <h1 className="mt-0.5 text-xl font-semibold tracking-tight">
