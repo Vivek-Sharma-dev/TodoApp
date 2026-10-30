@@ -39,4 +39,5 @@ authRouter.post(
   asyncHandler(authController.logoutAll),
 );
 authRouter.get("/me", authMiddleware, asyncHandler(authController.getMe));
+authRouter.patch("/me", authMiddleware, validate(authSchema.UpdateUserSchema, "body"), asyncHandler(authController.updateMe));
 export default authRouter;

@@ -19,6 +19,7 @@ import {
   createVerificationToken,
   verifyOtp,
 } from "../services/verification.service.js";
+import { success } from "zod";
 
 // register a new user
 export const register = async (req, res) => {
@@ -66,9 +67,9 @@ export const register = async (req, res) => {
       client,
       user.rows[0].id,
       "EMAIL_VERIFICATION",
-    );  
+    );
     await client.query("COMMIT");
-    await sendVerificationOtp(email, otp);    
+    await sendVerificationOtp(email, otp);
     return res.status(201).json({
       success: true,
       data: {
@@ -275,7 +276,11 @@ export const refresh = async (req, res) => {
     new Date(Date.now() + config.REFRESH_TOKEN_LIFETIME),
     session.rows[0].id,
   ]);
-  const accessToken = generateAccessToken(user.rows[0], session.rows[0].id, "access");
+  const accessToken = generateAccessToken(
+    user.rows[0],
+    session.rows[0].id,
+    "access",
+  );
 
   res.cookie("refreshToken", refreshTokenNew, {
     httpOnly: true,
@@ -348,7 +353,10 @@ export const logoutAll = async (req, res) => {
 // get user information
 export const getMe = async (req, res) => {
   const { id: userId } = req.user;
-  const user = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
+  const user = await pool.query(
+    "SELECT * FROM users WHERE id = $1 ",
+    [userId],
+  );
   if (!user.rows[0]) {
     throw new AppError("User not found", 404);
   }
@@ -362,5 +370,29 @@ export const getMe = async (req, res) => {
       },
     },
     message: "User information fetched successfully",
+  });
+};
+
+// Update me
+export const updateMe = async (req, res) => {
+  const id = req.user.id;
+  const name = req.body.name;
+
+  const updatedUser =await pool.query("UPDATE users SET name = $1 WHERE id = $2 RETURNING id, name, email;", [
+    name,
+    id,
+  ]);
+  if (!updatedUser.rowCount) {
+    return res.status(404).json({
+      success: false,
+      message: "user not found",
+    });
+  }
+  return res.status(200).json({
+    success: true,
+    data: {
+      user: { ...updatedUser.rows[0] },
+    },
+    message: "User Details updated successfully",
   });
 };
