@@ -235,7 +235,6 @@ export const refresh = async (req, res) => {
     decode.sessionId,
   ]);
 
-  console.log(session)
   const user = await pool.query(
     "SELECT email, name, id, email_verified FROM users WHERE id = $1",
     [decode.id],

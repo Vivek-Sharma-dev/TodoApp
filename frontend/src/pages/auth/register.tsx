@@ -40,7 +40,6 @@ const Register = () => {
 
     const result = registerSchema.safeParse(formData);
 
-    console.log(result);
 
     if (!result.success) {
       const fieldError: Partial<Record<keyof RegisterInput, string>> = {};

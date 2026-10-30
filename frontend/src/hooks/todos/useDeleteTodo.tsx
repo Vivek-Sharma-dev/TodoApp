@@ -9,7 +9,7 @@ export const useDeleteTodo = () => {
       return response;
     },
     onError: (err) => {
-      console.log("Error occur during deletion: ", err)
+      console.error("Error occur during deletion: ", err)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ["todos"]})

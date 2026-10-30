@@ -21,7 +21,6 @@ export const emailSender = async (toMail, subject, htmlText, textText = "") => {
       text: textText,
       html: htmlText,
     });
-    console.log("INFO:", info);
     return true;
   } catch (error) {
     console.error("Error while sending mail:", error);

@@ -10,6 +10,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Verify from "./pages/auth/Verify.tsx";
 import { AuthProvider } from "./auth/AuthProvider.tsx";
 import ProtectedRoutes from "./components/common/ProtectedRoutes.tsx";
+import TasksPage from "./pages/TasksPage.tsx";
+import Settings from "./pages/Settings.tsx";
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
@@ -21,9 +23,16 @@ const router = createBrowserRouter([
         element: <ProtectedRoutes />,
         children: [
           {
-            
             index: true,
             Component: Dashboard,
+          },
+          {
+            path: "tasks",
+            Component: TasksPage
+          },
+          {
+            path: "settings",
+            Component: Settings
           },
         ],
       },

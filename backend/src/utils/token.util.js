@@ -55,7 +55,5 @@ export const verifyToken = (token) => {
 // compare hashed refresh tokens
 export const compareHashedRefreshTokens = (refreshTokenDb, refreshTokenClient) => {
     const hashedRefreshToken = generateHashedRefreshToken(refreshTokenClient);
-    console.log(hashedRefreshToken)
-    console.log(refreshTokenDb)
     return hashedRefreshToken === refreshTokenDb;
 }
