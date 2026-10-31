@@ -1,14 +1,16 @@
 import {
-  Camera,
+  ArrowUpRight,
   CheckCircle2,
   ChevronRight,
+  Clock3,
   LockKeyhole,
-  Save,
+  Mail,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import TextInput from "../common/inputs/TextInput";
+import ProfileAvatar from "./ProfileAvatar";
+import EditNameModal from "./EditNameModal";
 
 type ProfileType = {
   name: string | undefined;
@@ -18,20 +20,16 @@ type ProfileType = {
   setActiveTab: Dispatch<SetStateAction<"profile" | "security" | "account">>;
 };
 
-const UserProfile = ({
-  name,
-  email,
-  inputClasses,
-  secondaryButtonClasses,
-  setActiveTab,
-}: ProfileType) => {
-  const [fullName, setFullName] = useState<string | undefined>(
-    name || undefined,
-  );
-  console.log(name);
+const UserProfile = ({ name, email, setActiveTab }: ProfileType) => {
+  const [isEditAvatarOpen, setIsEditAvatarOpen] = useState(false);
+  const [isEditNameOpen, setIsEditNameOpen] = useState(false);
+  const [isUpdateEmailOpen, setIsUpdateEmailOpen] = useState(false);
+
+  const displayName = name?.trim() || "Your name";
+
   return (
     <div className="space-y-5">
-      {/* Profile information */}
+      {/* Profile overview */}
       <section className="overflow-hidden rounded-card border border-border bg-surface">
         <div className="flex items-center gap-3 border-b border-border p-5">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
@@ -42,110 +40,116 @@ const UserProfile = ({
             <h2 className="font-semibold text-text-primary">
               Profile information
             </h2>
+
             <p className="mt-0.5 text-sm text-text-secondary">
-              Manage your personal information and account details.
+              View and manage your personal information.
             </p>
           </div>
         </div>
 
         <div className="p-5 sm:p-6">
-          {/* Avatar and account identity */}
-          <div className="mb-6 flex flex-wrap items-center gap-4">
-            <div className="group relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-brand text-2xl font-semibold text-white">
-              {fullName ? fullName.trim().charAt(0).toUpperCase() : "U"}
-
-              <button
-                type="button"
-                aria-label="Change profile photo"
-                title="Profile photo feature coming later"
-                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100 focus:opacity-100"
-              >
-                <Camera className="h-5 w-5" />
-              </button>
-            </div>
+          {/* Avatar and identity */}
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+            <ProfileAvatar
+              name={name ?? ""}
+              onEdit={() => setIsEditAvatarOpen(true)}
+            />
 
             <div className="min-w-0 flex-1">
-              <h3 className="wrap-break-words font-semibold text-text-primary">
-                {fullName || "Your name"}
+              <h3 className="break-words text-xl font-semibold text-text-primary">
+                {displayName}
               </h3>
 
               <p className="mt-1 break-all text-sm text-text-secondary">
-                {email}
+                {email || "No email available"}
               </p>
 
-              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+              <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Verified
+                Email verified
               </span>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setIsEditAvatarOpen(true)}
+              className="inline-flex items-center justify-center gap-2 self-start rounded-button border border-border px-3 py-2 text-sm font-medium text-text-primary transition hover:bg-background sm:self-center"
+            >
+              Change photo
+              <ArrowUpRight className="h-4 w-4" />
+            </button>
           </div>
 
-          {/* Profile form */}
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-            }}
-          >
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
+          {/* Personal information */}
+          <div className="mt-8 border-t border-border pt-6">
+            <div className="mb-4">
+              <h3 className="font-semibold text-text-primary">
+                Personal details
+              </h3>
 
-                <TextInput
-                  handleChange={(e) => setFullName(e.target.value)}
-                  name={"name"}
-                  placeholder="Update Your name"
-                  value={name}
-                  type="text"
-                  title="Full Name"
-                  error=""
-                />
-               
-              </div>
+              <p className="mt-1 text-sm text-text-secondary">
+                Manage the information associated with your account.
+              </p>
+            </div>
 
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-2 block text-sm font-medium text-text-secondary"
-                >
-                  Email address
-                </label>
+            <div className="divide-y divide-border">
+              {/* Name */}
+              <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-text-secondary">
+                    <UserRound className="h-5 w-5" />
+                  </div>
 
-                <div className="relative">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={email}
-                    readOnly
-                    className={`${inputClasses} cursor-not-allowed pr-10 opacity-60`}
-                  />
+                  <div className="min-w-0">
+                    <p className="text-sm text-text-secondary">Full name</p>
 
-                  <LockKeyhole className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+                    <p className="mt-1 break-words font-medium text-text-primary">
+                      {displayName}
+                    </p>
+                  </div>
                 </div>
 
-                <p className="mt-2 text-xs leading-5 text-text-muted">
-                  Your email address cannot be changed here.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsEditNameOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 self-start rounded-button border border-border px-3 py-2 text-sm font-medium text-text-primary transition hover:border-brand hover:text-brand sm:self-center"
+                >
+                  Edit name
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Email */}
+              <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-text-secondary">
+                    <Mail className="h-5 w-5" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-sm text-text-secondary">Email address</p>
+
+                    <p className="mt-1 break-all font-medium text-text-primary">
+                      {email || "No email available"}
+                    </p>
+
+                    <p className="mt-1 text-xs text-text-muted">
+                      Your email address cannot be changed yet.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsUpdateEmailOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 self-start rounded-button border border-border px-3 py-2 text-sm font-medium text-text-secondary transition hover:border-brand hover:text-brand sm:self-center"
+                >
+                  Update email
+                  <Clock3 className="h-4 w-4" />
+                </button>
               </div>
             </div>
-
-            <div className="mt-6 flex flex-wrap justify-end gap-3 border-t border-border pt-5">
-              <button
-                type="button"
-                onClick={() => setFullName("vivek sharma")}
-                className={secondaryButtonClasses}
-              >
-                Reset
-              </button>
-
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-button bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-hover"
-              >
-                <Save className="h-4 w-4" />
-                Save changes
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </section>
 
@@ -162,7 +166,7 @@ const UserProfile = ({
             </h2>
 
             <p className="mt-1 text-sm leading-6 text-text-secondary">
-              Manage your password and review account security options.
+              Manage your password and review your account security options.
             </p>
 
             <button
@@ -176,6 +180,23 @@ const UserProfile = ({
           </div>
         </div>
       </section>
+      {isEditNameOpen && (
+        <EditNameModal
+          initialName={name ?? ""}
+          onClose={() => setIsEditNameOpen(false)}
+          onSuccess={() => {
+            setIsEditNameOpen(false);
+          }}
+        />
+      )}
+
+      {/*
+        Modal components will be mounted here in the next steps:
+
+        EditAvatarModal
+        EditNameModal
+        UpdateEmailModal
+      */}
     </div>
   );
 };

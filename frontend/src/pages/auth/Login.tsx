@@ -39,6 +39,7 @@ const Login = () => {
   // form handling
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError({})
 
     const result = loginSchema.safeParse(data);
     if (!result.success) {
@@ -88,7 +89,7 @@ const Login = () => {
       )}
 
       {/* Login form */}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} noValidate className="space-y-5">
         <TextInput
           name="email"
           placeholder="you@example.com"
