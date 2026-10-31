@@ -28,7 +28,7 @@ export const emailVerificationSchema = z.object({
 });
 
 export const UpdateUserSchema = z.object({
-  name: z.string().trim().optional(),
+  name: z.string().trim().min(1, "Name must be at least 1 characters long"),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

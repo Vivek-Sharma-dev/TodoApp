@@ -377,7 +377,10 @@ export const getMe = async (req, res) => {
 export const updateMe = async (req, res) => {
   const id = req.user.id;
   const name = req.body.name;
-
+  console.log('body is: ', req.body)
+  if(!name) {
+    return res.status(404).json({message: "Field are not exist into body"})
+  }
   const updatedUser =await pool.query("UPDATE users SET name = $1 WHERE id = $2 RETURNING id, name, email;", [
     name,
     id,
